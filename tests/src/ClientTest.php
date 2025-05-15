@@ -68,6 +68,7 @@ class ClientTest extends TestCase
         $xml = simplexml_load_string($contents);
         $this->assertInstanceOf(\SimpleXMLElement::class, $xml);
 
+        $xml->registerXPathNamespace('edm', 'http://docs.oasis-open.org/odata/ns/edm');
         $enumTypes = $xml->xpath('//edm:Schema/edm:EnumType');
         $this->assertCount(34, $enumTypes);
     }
