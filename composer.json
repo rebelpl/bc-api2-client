@@ -1,0 +1,28 @@
+{
+  "name": "rebelpl/bc-api2-client",
+  "description": "Business Central API interface",
+  "type": "library",
+  "license": "GPLv3",
+  "authors": [
+    {
+      "name": "Artur Jedlinski",
+      "email": "artur.jedlinski@rebel.pl"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "ext-simplexml": "*",
+    "guzzlehttp/guzzle": "^7.9",
+    "nesbot/carbon": "^3.9"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Rebel\\BCApi2\\": "src/",
+      "Rebel\\Test\\BCApi2\\": "tests/src/"
+    }
+  }
+}
