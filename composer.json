@@ -2,7 +2,7 @@
   "name": "rebelpl/bc-api2-client",
   "description": "Business Central API interface",
   "type": "library",
-  "license": "GPLv3",
+  "license": "MIT",
   "authors": [
     {
       "name": "Artur Jedlinski",
