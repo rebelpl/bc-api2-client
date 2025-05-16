@@ -1,5 +1,4 @@
 <?php
-
 namespace Rebel\BCApi2;
 
 class Entity
