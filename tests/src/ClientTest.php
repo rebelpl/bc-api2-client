@@ -1,95 +1,160 @@
 <?php
 namespace Rebel\Test\BCApi2;
 
-use Carbon\Carbon;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
-use Rebel\BCApi2\ApiPath;
 use Rebel\BCApi2\Client;
-use GuzzleHttp;
-use Psr\Http\Message\RequestInterface;
+use SimpleXMLElement;
 
 class ClientTest extends TestCase
 {
-    private Client $client;
-    private bool $accessTokenAvailable = false;
+    protected Client $client;
+    protected MockHandler $mockResponse;
+
+    /** @var array<int, array{'request': Request, 'response': Response}> */
+    protected array $historyContainer = [];
 
     protected function setUp(): void
     {
-//        $logMiddleware = GuzzleHttp\Middleware::mapRequest(function (RequestInterface $request) {
-//            // Log the URL
-//            echo "Request URL: " . $request->getUri() . "\n";
-//
-//            // Log the headers
-//            echo "Request Headers:\n";
-//            foreach ($request->getHeaders() as $name => $values) {
-//                echo "$name: " . implode(", ", $values) . "\n";
-//            }
-//
-//            return $request;
-//        });
-//
-//        // Create a handler stack and push the middleware
-//        $stack = GuzzleHttp\HandlerStack::create();
-//        $stack->push($logMiddleware);
+        $this->mockResponse = new MockHandler();
+        $stack = HandlerStack::create($this->mockResponse);
 
-        $config = include 'tests/config.php';
-        $this->accessTokenAvailable = !empty($config['access_token']);
-        $this->client = new Client(accessToken: $config['access_token'], environment: $config['environment'], apiPath: $config['api_path'], companyId: $config['company_id'], options: [
-//            'handler' => $stack,
-        ]);
+        $this->historyContainer = [];
+        $history = Middleware::history($this->historyContainer);
+        $stack->push($history);
+
+        $this->client = new Client(
+            accessToken: 'test-token',
+            environment: 'test-env',
+            companyId: 'test-company-id',
+            options: [
+                'handler' => $stack,
+            ]
+        );
     }
 
     public function testGetBaseUrl()
     {
         $baseUrl = $this->client->getBaseUrl();
         $this->assertStringStartsWith('https://api.businesscentral.dynamics.com/v2.0', $baseUrl);
-        $this->assertStringEndsWith('/', $baseUrl);
-        $this->assertStringContainsString('/api/', $baseUrl);
+        $this->assertStringEndsWith('/api/', $baseUrl);
 
-        $apiGroup = new ApiPath(apiPublisher: 'mycompany', apiGroup: 'finance', apiVersion: 'v3.1');
-        $client = new Client(accessToken: 'TEST', environment: 'production', apiPath: $apiGroup);
+        $client = new Client(accessToken: 'TEST', environment: 'production');
         $this->assertEquals(
-            'https://api.businesscentral.dynamics.com/v2.0/production/api/mycompany/finance/v3.1/',
+            'https://api.businesscentral.dynamics.com/v2.0/production/api/',
             $client->getBaseUrl());
     }
 
-    public function testGetCompanyUrl()
+    public function testBuildUri(): void
     {
         $this->assertEquals(
-            'companies(mycompany)',
-            $this->client->getCompanyUrl('mycompany'));
+            'foo/bar/v1.5/companies',
+            $this->client->buildUri('companies', 'foo/bar/v1.5', false));
     }
 
-    public function testFetchMetadata()
+    public function testGet(): void
     {
-        $this->checkAccessToken();
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(Client::HTTP_OK));
+
+        $this->client->get('v1.0/test');
+
+        /** @var array{'request': Request, 'response': Response} $transaction */
+        $transaction = end($this->historyContainer);
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v1.0/test',
+            (string)$transaction['request']->getUri());
+        $this->assertEquals('GET', $transaction['request']->getMethod());
+        $this->assertEmpty((string)$transaction['request']->getBody());
+    }
+
+    public function testPost(): void
+    {
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(Client::HTTP_CREATED));
+
+        $this->client->post('v1.0/test(123)', json_encode([
+            'name' => 'Test',
+        ]));
+
+        /** @var array{'request': Request, 'response': Response} $transaction */
+        $transaction = end($this->historyContainer);
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v1.0/test(123)',
+            (string)$transaction['request']->getUri());
+        $this->assertEquals('POST', $transaction['request']->getMethod());
+        $this->assertNotEmpty((string)$transaction['request']->getBody());
+    }
+
+    public function testPatch(): void
+    {
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(Client::HTTP_OK));
+
+        $this->client->patch('v1.0/test(123)', json_encode([
+            'name' => 'New Test',
+        ]), 'test-etag');
+
+        /** @var array{'request': Request, 'response': Response} $transaction */
+        $transaction = end($this->historyContainer);
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v1.0/test(123)',
+            (string)$transaction['request']->getUri());
+        $this->assertEquals('PATCH', $transaction['request']->getMethod());
+        $this->assertNotEmpty((string)$transaction['request']->getBody());
+        $this->assertEquals('test-etag', $transaction['request']->getHeaderLine(Client::HEADER_IFMATCH));
+    }
+
+    public function testDelete(): void
+    {
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(Client::HTTP_NO_CONTENT));
+
+        $this->client->delete('v1.0/test(123)', 'test-etag');
+
+        /** @var array{'request': Request, 'response': Response} $transaction */
+        $transaction = end($this->historyContainer);
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v1.0/test(123)',
+            (string)$transaction['request']->getUri());
+        $this->assertEquals('DELETE', $transaction['request']->getMethod());
+        $this->assertEmpty((string)$transaction['request']->getBody());
+        $this->assertEquals('test-etag', $transaction['request']->getHeaderLine(Client::HEADER_IFMATCH));
+    }
+
+    public function testFetchMetadata(): void
+    {
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/metadata.xml')));
 
         $contents = $this->client->fetchMetadata();
         $xml = simplexml_load_string($contents);
-        $this->assertInstanceOf(\SimpleXMLElement::class, $xml);
+        $this->assertInstanceOf(SimpleXMLElement::class, $xml);
 
         $xml->registerXPathNamespace('edm', 'http://docs.oasis-open.org/odata/ns/edm');
         $enumTypes = $xml->xpath('//edm:Schema/edm:EnumType');
         $this->assertCount(34, $enumTypes);
     }
 
-    public function testGetCompanies()
+    public function testGetCompanies(): void
     {
-        $this->checkAccessToken();
+        $this->mockResponse->reset();
+        $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/companies.json')));
 
         $companies = $this->client->getCompanies();
         foreach ($companies as $company) {
-            $this->assertIsString($company->id());
-            $this->assertIsString($company->getName());
-            $this->assertIsString($company->getDisplayName());
-            $this->assertInstanceOf(Carbon::class, $company->getSystemCreatedAt());
-        }
-    }
+            $this->assertContains($company->id(), [
+                'e802e7d1-5408-f011-9afa-6045bdabb318',
+                '3ab5c248-e72b-f011-9a4a-7c1e5275406f',
+            ]);
 
-    private function checkAccessToken(): void
-    {
-        if (!$this->accessTokenAvailable) {
-            $this->markTestSkipped('The access token is not set up, use export BCAPI2_ACCESS_TOKEN="yoursecrettokenhere" to proceed with the connection tests.');
+            $this->assertIsString($company->getName());
+            $this->assertGreaterThan(4, strlen($company->getName()));
+            $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->getSystemCreatedAt());
         }
     }
 }

@@ -6,7 +6,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7;
 
-class Client
+readonly class Client
 {
     const
         HTTP_OK = 200,
@@ -20,10 +20,9 @@ class Client
     protected GuzzleHttp\Client $client;
 
     public function __construct(
-        private readonly string  $accessToken,
-        private readonly string  $environment,
-        private readonly string  $apiPath = '/v2.0',
-        private readonly ?string $companyId = null,
+        private string  $accessToken,
+        private string  $environment,
+        private ?string $companyId = null,
         array $options = [])
     {
         $this->initHttpClient($options);
@@ -51,14 +50,17 @@ class Client
         return
             self::BASE_URL
             . '/' . $this->environment
-            . '/api'
-            . $this->apiPath
-            . '/';
+            . '/api/';
     }
 
-    public function getCompanyUrl(string $companyId): string
+    public function buildUri(string $resoure, string $apiPath = 'v2.0', bool $includeCompanyId = true): string
     {
-        return "companies({$companyId})";
+        $url = $apiPath;
+        if ($includeCompanyId) {
+            $url .= "/companies({$this->companyId})";
+        }
+
+        return $url . '/'. $resoure;
     }
 
     public function get(string $uri): ?Psr7\Response
@@ -92,24 +94,19 @@ class Client
             $options['headers'][ self::HEADER_IFMATCH ] = $etag;
         }
 
-        if ($this->companyId) {
-            $uri = $this->getCompanyUrl($this->companyId) . "/{$uri}";
-        }
-
         return $this->getResponse($method, $uri, $options);
     }
 
-    protected function getResponse(string $method, string $uri, array $options = []): ?Psr7\Response
+    /**
+     * @throws GuzzleException
+     */
+    protected function getResponse(string $method, string $uri, array $options = []): Psr7\Response
     {
         try {
             $response = $this->client->request($method, $uri, $options);
         }
         catch (ClientException $e) {
             return $e->getResponse();
-
-        } catch (GuzzleException $e) {
-            return null;
-
         }
 
         return $response;
@@ -121,7 +118,8 @@ class Client
      */
     public function getCompanies(): array
     {
-        $response = $this->getResponse('GET', 'companies');
+        $uri = $this->buildUri('companies', 'v2.0', false);
+        $response = $this->get($uri);
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception(
                 $response->getBody(),
@@ -140,9 +138,10 @@ class Client
     /**
      * @throws Exception
      */
-    public function fetchMetadata(): string
+    public function fetchMetadata(string $apiPath = 'v2.0'): string
     {
-        $response = $this->getResponse('GET', '$metadata');
+        $uri = $this->buildUri('$metadata', $apiPath, false);
+        $response = $this->get($uri);
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception(
                 $response->getBody(),

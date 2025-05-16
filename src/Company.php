@@ -1,8 +1,6 @@
 <?php
 namespace Rebel\BCApi2;
 
-use Carbon\Carbon;
-
 readonly class Company
 {
     public function __construct(private array $data)
@@ -29,9 +27,9 @@ readonly class Company
         return $this->data['systemVersion'];
     }
 
-    public function getSystemCreatedAt(): Carbon
+    public function getSystemCreatedAt(): \DateTime
     {
-        return new Carbon($this->data['systemCreatedAt']);
+        return \DateTime::createFromFormat(Expression::DATETIME_FORMAT, $this->data['systemCreatedAt']);
     }
 
     public function getSystemCreatedBy(): string
@@ -39,9 +37,9 @@ readonly class Company
         return $this->data['systemCreatedBy'];
     }
 
-    public function getSystemModifiedAt(): Carbon
+    public function getSystemModifiedAt(): \DateTime
     {
-        return new Carbon($this->data['systemModifiedAt']);
+        return \DateTime::createFromFormat(Expression::DATETIME_FORMAT, $this->data['systemModifiedAt']);
     }
 
     public function getSystemModifiedBy(): string

@@ -13,8 +13,7 @@
     "php": "^8.2",
     "ext-json": "*",
     "ext-simplexml": "*",
-    "guzzlehttp/guzzle": "^7.9",
-    "nesbot/carbon": "^3.9"
+    "guzzlehttp/guzzle": "^7.9"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.5"

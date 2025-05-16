@@ -1,0 +1,29 @@
+{
+  "@odata.context": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/$metadata#companies",
+  "value": [
+    {
+      "id": "e802e7d1-5408-f011-9afa-6045bdabb318",
+      "systemVersion": "26.0.30643.32100",
+      "timestamp": 4006,
+      "name": "My Company",
+      "displayName": "",
+      "businessProfileId": "",
+      "systemCreatedAt": "2025-03-24T02:08:05.067Z",
+      "systemCreatedBy": "00000000-0000-0000-0000-000000000001",
+      "systemModifiedAt": "2025-03-24T02:08:05.067Z",
+      "systemModifiedBy": "00000000-0000-0000-0000-000000000001"
+    },
+    {
+      "id": "3ab5c248-e72b-f011-9a4a-7c1e5275406f",
+      "systemVersion": "26.0.30643.32100",
+      "timestamp": 767626,
+      "name": "Rebel",
+      "displayName": "Rebel Sp. z o.o.",
+      "businessProfileId": "",
+      "systemCreatedAt": "2025-05-08T08:34:41.677Z",
+      "systemCreatedBy": "5a2708fc-5d00-4816-8193-792971119201",
+      "systemModifiedAt": "2025-05-08T13:15:52.333Z",
+      "systemModifiedBy": "27a5c860-513d-4a19-b551-9657ffc97b96"
+    }
+  ]
+}

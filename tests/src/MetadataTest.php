@@ -28,7 +28,7 @@ class MetadataTest extends TestCase
 
     public function testEntityTypes()
     {
-        $this->assertCount(86, $this->metadata->getEntityTypes());
+        $this->assertCount(87, $this->metadata->getEntityTypes());
         $entityType = $this->metadata->getEntityType('item');
 
         $this->assertCount(22, $entityType->getProperties());
@@ -61,7 +61,7 @@ class MetadataTest extends TestCase
 
     public function testEntitySetCapabilities()
     {
-        $this->assertCount(86, $this->metadata->getEntitySets());
+        $this->assertCount(87, $this->metadata->getEntitySets());
         $this->assertInstanceOf(Metadata\EntitySet::class, $this->metadata->getEntitySetForType('item'));
 
         $entitySet = $this->metadata->getEntitySet('subscriptions');

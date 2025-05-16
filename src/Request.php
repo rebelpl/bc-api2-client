@@ -10,9 +10,95 @@ class Request
 
     public function __construct(
         private readonly string $resourceUrl,
-        private readonly ?string $primaryKey = null)
+        private ?string $primaryKey = null)
     {
 
+    }
+
+    public function get($primaryKey): self
+    {
+        $this->primaryKey = $primaryKey;
+        return $this;
+    }
+
+    public function select($properties): self
+    {
+        $this->queryOptions['$select'] = is_array($properties)
+            ? join(',', $properties)
+            : (string)$properties;
+        return $this;
+    }
+
+    public function top(?int $top): self
+    {
+        $this->queryOptions['$top'] = $top;
+        return $this;
+    }
+
+    public function where(array $criteria): self
+    {
+        $map = array_map(function ($key, $value) {
+            if ($value instanceof Expression) {
+                return $value;
+            }
+
+            if (is_array($value)) {
+                return new Expression($value[0], $value[1], $value[2]);
+            }
+
+            if (is_int($key)) {
+                return $value;
+            }
+
+            return new Expression($key, '=', $value);
+        }, array_keys($criteria), $criteria);
+
+        $filter = join(' ' . Expression::AND . ' ', $map);
+        return $this->filter($filter);
+    }
+
+    public function filter(string $filter): self
+    {
+        $this->queryOptions['$filter'] = $filter ?: null;
+        return $this;
+    }
+
+    public function skip(?int $skip): self
+    {
+        $this->queryOptions['$skip'] = $skip;
+        return $this;
+    }
+
+    public function count(): self
+    {
+        $this->queryOptions['$count'] = 'true';
+        return $this;
+    }
+
+    public function orderBy($field, $direction = null): self
+    {
+        if (is_array($field)) {
+            $map = array_map(function ($key, $value) {
+                if (is_array($value)) {
+                    return $value[0] . ' ' . $value[1];
+                }
+
+                if (is_int($key)) {
+                    return $value;
+                }
+
+                return $key . ' ' . $value;
+            }, array_keys($field), $field);
+            $this->queryOptions['$orderby'] = join(',', $map);
+            return $this;
+        }
+
+        $this->queryOptions['$orderby'] = $field;
+        if (!is_null($direction)) {
+            $this->queryOptions['$orderby'] .= ' ' . $direction;
+        }
+
+        return $this;
     }
 
     public function buildUri(): string
@@ -28,9 +114,7 @@ class Request
 
         if (!empty($this->queryOptions)) {
             $uri .= '?' . Psr7\Query::build(
-                array_filter($this->queryOptions, function($value) {
-                    return !is_null($value);
-                }));
+                array_filter($this->queryOptions));
         }
 
         return $uri;
