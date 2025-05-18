@@ -8,13 +8,14 @@ To install, use composer:
 composer require rebelpl/bc-api2-client
 ```
 
-to install common entities, use:
+To install common entities (v2.0 api), use:
 ```
 composer require rebelpl/bc-api2-common
 ```
 
 ## Usage
 
+### Setup
 To use the client, you need to obtain a valid Access Token.
 Use an OAuth client to obtain it (for example [rebelpl/oauth2-businesscentral](https://github.com/rebelpl/oauth2-businesscentral)).
 
@@ -30,14 +31,37 @@ $token = $provider->getAccessToken('client_credentials', [
     'scope' => Rebel\OAuth2\Client\Provider\BusinessCentral::CLIENT_CREDENTIALS_SCOPE
 ]);
 
-$this->client = new Rebel\BCApi2\Client(
+$client = new Rebel\BCApi2\Client(
     accessToken: $token->getToken(),
     environment: 'sandbox',
-    companyId: null,
+    companyId: '1234567890',
 );
+```
 
+### Get Companies
+```php
 foreach ($client->getCompanies() as $company) {
     echo " - {$company->getName()}:\t{$company->id()}\n";
+}
+
+```
+
+### Get Company Resources
+```php
+// v2.0/companies(1234567890)/items?$top=3
+$uri = $client->buildUri('items?$top=3');
+$response = $client->get($uri);
+$data = json_decode($response->getBody(), true);
+foreach ($data['value'] as $item) {
+    echo " - {$item['number']}:\t{$item['displayName']}\n";
+}
+```
+### Use Repository / Entity helpers
+```php
+$repository = new Rebel\BCApi2\Repository($client, 'salesOrders');
+$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5);
+foreach ($results as $salesOrder) {
+    echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 }
 ```
 

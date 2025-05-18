@@ -65,12 +65,12 @@ class RepositoryTest extends TestCase
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v2.0/companies(test-company-id)/salesOrders?%24top=3&%24skip=2',
             (string)$transaction['request']->getUri());
 
-        foreach ($result as $entity) {
-            $this->assertInstanceOf(Entity::class, $entity);
-            $this->assertNotEmpty($entity->get('number'));
-            $this->assertInstanceOf(\DateTime::class, $entity->getAsDate('orderDate'));
+        foreach ($result as $salesOrder) {
+            $this->assertInstanceOf(Entity::class, $salesOrder);
+            $this->assertNotEmpty($salesOrder->get('number'));
+            $this->assertInstanceOf(\DateTime::class, $salesOrder->getAsDate('orderDate'));
 
-            $lastModifiedDateTime = $entity->getAsDateTime('lastModifiedDateTime');
+            $lastModifiedDateTime = $salesOrder->getAsDateTime('lastModifiedDateTime');
             $this->assertGreaterThan(new \DateTime('2020-12-31'), $lastModifiedDateTime);
         }
     }

@@ -7,7 +7,8 @@ readonly class Repository
         protected Client $client,
         protected string $entityName,
         protected string $apiPath = 'v2.0',
-        protected string $entityClass = Entity::class)
+        protected string $entityClass = Entity::class,
+        protected array $classMap = [])
     {
         if (!class_exists($this->entityClass)) {
             throw new Exception("Class '{$this->entityClass}' does not exist.");
