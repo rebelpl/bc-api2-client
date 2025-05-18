@@ -19,9 +19,9 @@ class Metadata
         $this->namespace = $namespace;
     }
 
-    public function addEnumType(string $enumType, array $members): void
+    public function addEnumType(string $name, array $members): void
     {
-        $this->enumTypes[ $enumType ] = $members;
+        $this->enumTypes[ $name ] = $members;
     }
 
     /**
@@ -35,9 +35,13 @@ class Metadata
     /**
      * @return array<int, string>
      */
-    public function getEnumTypeMembers(string $enumType): array
+    public function getEnumTypeMembers(string $name, bool $nameIncludesNamespace = false): array
     {
-        return $this->enumTypes[ $enumType ];
+        if ($nameIncludesNamespace) {
+            $name = substr($name, strlen($this->namespace) + 1);
+        }
+
+        return $this->enumTypes[ $name ];
     }
 
     public function addEntityType(Metadata\EntityType $entityType): void
@@ -89,5 +93,10 @@ class Metadata
         }
 
         return null;
+    }
+
+    public function getNamespace(): string
+    {
+        return $this->namespace;
     }
 }
