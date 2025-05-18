@@ -1,6 +1,8 @@
 <?php
 namespace Rebel\BCApi2;
 
+use Rebel\BCApi2\Entity\Collection;
+
 class Entity
 {
     const ODATA_ETAG = '@odata.etag';

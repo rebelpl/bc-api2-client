@@ -1,5 +1,10 @@
 <?php
-namespace Rebel\BCApi2;
+namespace Rebel\BCApi2\Entity;
+
+use Rebel\BCApi2\Client;
+use Rebel\BCApi2\Entity;
+use Rebel\BCApi2\Request;
+use Rebel\BCApi2\Exception;
 
 readonly class Repository
 {

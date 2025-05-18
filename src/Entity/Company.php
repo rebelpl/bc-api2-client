@@ -1,5 +1,7 @@
 <?php
-namespace Rebel\BCApi2;
+namespace Rebel\BCApi2\Entity;
+
+use Rebel\BCApi2\Expression;
 
 readonly class Company
 {

@@ -1,16 +1,16 @@
 <?php
-namespace Rebel\Test\BCApi2;
+namespace Rebel\Test\BCApi2\Entity;
 
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
+use Rebel\BCApi2\Entity\Repository;
 use Rebel\BCApi2\Exception;
-use Rebel\BCApi2\Repository;
-use GuzzleHttp\Middleware;
 
 class RepositoryTest extends TestCase
 {

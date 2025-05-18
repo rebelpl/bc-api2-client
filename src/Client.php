@@ -5,6 +5,7 @@ use GuzzleHttp;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7;
+use Rebel\BCApi2\Entity\Company;
 
 readonly class Client
 {

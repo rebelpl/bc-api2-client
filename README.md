@@ -57,8 +57,9 @@ foreach ($data['value'] as $item) {
 }
 ```
 ### Use Repository / Entity helpers
+
 ```php
-$repository = new Rebel\BCApi2\Repository($client, 'salesOrders');
+$repository = new \Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
 $results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5);
 foreach ($results as $salesOrder) {
     echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
