@@ -29,7 +29,8 @@ class MetadataTest extends TestCase
     public function testEntityTypes()
     {
         $this->assertCount(87, $this->metadata->getEntityTypes());
-        $entityType = $this->metadata->getEntityType('item');
+        $entityType = $this->metadata->getEntityType('Microsoft.NAV.item', true);
+        $this->assertEquals('item', $entityType->getName());
 
         $this->assertCount(22, $entityType->getProperties());
         $this->assertCount(8, $entityType->getNavigationProperties());
@@ -62,12 +63,15 @@ class MetadataTest extends TestCase
     public function testEntitySetCapabilities()
     {
         $this->assertCount(87, $this->metadata->getEntitySets());
-        $this->assertInstanceOf(Metadata\EntitySet::class, $this->metadata->getEntitySetForType('item'));
+        $this->assertInstanceOf(Metadata\EntitySet::class, $this->metadata->getEntitySetFor('item'));
 
         $entitySet = $this->metadata->getEntitySet('subscriptions');
         $this->assertTrue($entitySet->isDeletable());
         $this->assertTrue($entitySet->isInsertable());
         $this->assertTrue($entitySet->isUpdatable());
         $this->assertFalse($entitySet->isSortable());
+
+        $entitySet = $this->metadata->getEntitySetFor('inventoryPostingGroup');
+        $this->assertEquals('inventoryPostingGroups', $entitySet->getName());
     }
 }

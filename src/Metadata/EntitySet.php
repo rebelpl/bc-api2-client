@@ -6,14 +6,20 @@ readonly class EntitySet
     const ODATA_CAPABILITIES = 'Org.OData.Capabilities.V1';
 
     public function __construct(
-        private string $type,
-        private array $capabilities)
+        private string $name,
+        private EntityType $entityType,
+        private array $capabilities = [])
     {
     }
 
-    public function getType(): string
+    public function getName(): string
     {
-        return $this->type;
+        return $this->name;
+    }
+
+    public function getEntityType(): EntityType
+    {
+        return $this->entityType;
     }
 
     public function isDeletable(): bool

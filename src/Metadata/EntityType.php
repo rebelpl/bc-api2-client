@@ -4,9 +4,15 @@ namespace Rebel\BCApi2\Metadata;
 readonly class EntityType
 {
     public function __construct(
+        private string $name,
         private array $properties = [],
         private array $navigationProperties = [])
     {
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**

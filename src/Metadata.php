@@ -40,9 +40,9 @@ class Metadata
         return $this->enumTypes[ $enumType ];
     }
 
-    public function addEntityType(string $name, Metadata\EntityType $entityType): void
+    public function addEntityType(Metadata\EntityType $entityType): void
     {
-        $this->entityTypes[ $name ] = $entityType;
+        $this->entityTypes[ $entityType->getName() ] = $entityType;
     }
 
     /**
@@ -53,14 +53,18 @@ class Metadata
         return $this->entityTypes;
     }
 
-    public function getEntityType(string $name): ?Metadata\EntityType
+    public function getEntityType(string $name, bool $nameIncludesNamespace = false): ?Metadata\EntityType
     {
+        if ($nameIncludesNamespace) {
+            $name = substr($name, strlen($this->namespace) + 1);
+        }
+
         return $this->entityTypes[ $name ] ?? null;
     }
 
-    public function addEntitySet(string $name, Metadata\EntitySet $entitySet): void
+    public function addEntitySet(Metadata\EntitySet $entitySet): void
     {
-        $this->entitySets[ $name ] = $entitySet;
+        $this->entitySets[ $entitySet->getName() ] = $entitySet;
     }
 
     /**
@@ -76,11 +80,10 @@ class Metadata
         return $this->entitySets[ $name ] ?? null;
     }
 
-    public function getEntitySetForType(string $type): ?Metadata\EntitySet
+    public function getEntitySetFor(string $name): ?Metadata\EntitySet
     {
-        $entityType = $this->namespace . '.' . $type;
         foreach ($this->entitySets as $entitySet) {
-            if ($entitySet->getType() === $entityType) {
+            if ($entitySet->getEntityType()->getName() === $name) {
                 return $entitySet;
             }
         }

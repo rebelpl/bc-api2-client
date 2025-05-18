@@ -28,20 +28,6 @@ class Factory
             $metadata->addEnumType($name, $members);
         }
 
-        // Extract EntitySets
-        $entitySets = $xml->xpath('//edm:Schema/edm:EntityContainer/edm:EntitySet');
-        foreach ($entitySets as $i => $entitySet) {
-            $name = (string)$entitySet['Name'];
-            $entityType = (string)$entitySet['EntityType'];
-            $capabilities = [];
-            foreach ($entitySet->Annotation as $annotation) {
-                $key = $annotation['Term'] .'.'. $annotation->Record->PropertyValue['Property'];
-                $capabilities[$key] = (string)$annotation->Record->PropertyValue['Bool'] === 'true';
-            }
-
-            $metadata->addEntitySet($name, new EntitySet($entityType, $capabilities));
-        }
-
         // Extract EntityTypes
         $entityTypes = $xml->xpath('//edm:Schema/edm:EntityType');
         foreach ($entityTypes as $entityType) {
@@ -72,7 +58,23 @@ class Factory
                 );
             }
 
-            $metadata->addEntityType($name, new EntityType($properties, $navigationProperties));
+            $metadata->addEntityType(new EntityType($name, $properties, $navigationProperties));
+        }
+
+        // Extract EntitySets
+        $entitySets = $xml->xpath('//edm:Schema/edm:EntityContainer/edm:EntitySet');
+        foreach ($entitySets as $i => $entitySet) {
+            $name = (string)$entitySet['Name'];
+            $type = (string)$entitySet['EntityType'];
+            $entityType = $metadata->getEntityType($type, true);
+
+            $capabilities = [];
+            foreach ($entitySet->Annotation as $annotation) {
+                $key = $annotation['Term'] .'.'. $annotation->Record->PropertyValue['Property'];
+                $capabilities[ $key ] = (string)$annotation->Record->PropertyValue['Bool'] === 'true';
+            }
+
+            $metadata->addEntitySet(new EntitySet($name, $entityType, $capabilities));
         }
 
         return $metadata;
