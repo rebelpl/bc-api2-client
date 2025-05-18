@@ -41,7 +41,7 @@ $client = new Rebel\BCApi2\Client(
 ### Get Companies
 ```php
 foreach ($client->getCompanies() as $company) {
-    echo " - {$company->getName()}:\t{$company->id()}\n";
+    echo " - {$company->getName()}:\t{$company->getId()}\n";
 }
 
 ```

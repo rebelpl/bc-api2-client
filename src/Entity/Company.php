@@ -9,7 +9,7 @@ readonly class Company
     {
     }
 
-    public function id(): string
+    public function getId(): string
     {
         return $this->data['id'];
     }
