@@ -7,8 +7,7 @@ readonly class Repository
         protected Client $client,
         protected string $entityName,
         protected string $apiPath = 'v2.0',
-        protected string $entityClass = Entity::class,
-        protected array $classMap = [])
+        protected string $entityClass = Entity::class)
     {
         if (!class_exists($this->entityClass)) {
             throw new Exception("Class '{$this->entityClass}' does not exist.");
@@ -20,13 +19,14 @@ readonly class Repository
         return $this->entityClass;
     }
 
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null): array
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expand = []): array
     {
         $request = (new Request($this->entityName))
             ->where($criteria)
             ->orderBy($orderBy)
             ->top($size)
-            ->skip($skip);
+            ->skip($skip)
+            ->expand($expand);
 
         $uri = $this->client->buildUri($request, $this->apiPath);
         $response = $this->client->get($uri);
@@ -40,18 +40,20 @@ readonly class Repository
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = $this->hydrate($result);
+            $entities[] = $this->hydrate($result, Entity::ODATA_CONTEXT);
         }
 
         return $entities;
     }
 
-    public function get($primaryKey): ?Entity
+    public function get(string $primaryKey, array $expand = []): ?Entity
     {
-        $request = new Request($this->entityName, $primaryKey);
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $request = (new Request($this->entityName, $primaryKey))
+            ->expand($expand);
 
+        $uri = $this->client->buildUri($request, $this->apiPath);
         $response = $this->client->get($uri);
+
         if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
             return null;
         }
@@ -66,9 +68,9 @@ readonly class Repository
         return $this->hydrate($data);
     }
 
-    public function find($primaryKey): ?Entity
+    public function find(string $primaryKey, array $expand = []): ?Entity
     {
-        return $this->get($primaryKey);
+        return $this->get($primaryKey, $expand);
     }
 
     public function delete(Entity $entity): void
@@ -146,8 +148,8 @@ readonly class Repository
         }
     }
 
-    private function hydrate(array $data): Entity
+    private function hydrate(array $data, ?string $context = null): Entity
     {
-        return new $this->entityClass($data);
+        return new $this->entityClass($data, $context);
     }
 }

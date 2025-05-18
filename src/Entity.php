@@ -8,13 +8,19 @@ class Entity
 
     protected array $original = [];
     protected string $primaryKey = 'id';
+    protected array $classMap = [];
 
     /** @var Entity[][] */
     protected array $included = [];
 
-    public function __construct(protected array $data = [])
+    public function __construct(protected array $data = [], protected ?string $context = null)
     {
         $this->loadData($data);
+    }
+
+    protected function getClassnameFor(string $property): string
+    {
+        return $this->classMap[ $property ] ?? static::class;
     }
 
     public function getETag(): ?string
@@ -36,10 +42,36 @@ class Entity
 
     public function loadData(array $data): void
     {
-        $this->data = $data;
-        if (isset($data[ self::ODATA_ETAG ])) {
-            $this->original = $data;
+        foreach ($data as $property => $value) {
+            if ($property === self::ODATA_ETAG) {
+                $this->data[ $property ] = $value;
+                $this->original = $data;
+            }
+            elseif ($property === self::ODATA_CONTEXT) {
+                $this->context = $value;
+            }
+            elseif (is_array($value)) {
+                $this->data[ $property ] = $this->hydrate($property, $value);
+            }
+            else {
+                $this->set($property, $value);
+            }
         }
+    }
+
+    private function hydrate(string $property, array $value): mixed
+    {
+        $className = $this->getClassnameFor($property);
+        if (!array_is_list($value)) {
+            return new $className($value);
+        }
+
+        $collection = new Collection();
+        foreach ($value as $item) {
+            $collection->append(new $className($item));
+        }
+
+        return $collection;
     }
 
     public function get(string $key)
@@ -98,20 +130,5 @@ class Entity
         return array_filter($this->data, function ($key) {
             return $this->data[ $key ] !== $this->original[ $key ];
         }, ARRAY_FILTER_USE_KEY);
-    }
-
-    public function getAllIncluded(): array
-    {
-        return $this->included;
-    }
-
-    public function getIncluded(string $partName): array
-    {
-        return $this->included[ $partName ] ?? [];
-    }
-
-    public function setIncluded(string $partName, array $included): void
-    {
-        $this->included[ $partName ] = $included;
     }
 }

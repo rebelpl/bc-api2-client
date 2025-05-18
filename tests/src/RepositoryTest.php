@@ -56,13 +56,16 @@ class RepositoryTest extends TestCase
         $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], null, 3, 2);
+        $result = $repository->findBy([], null, 3, 2, [ 'salesOrderLines', 'customer' ]);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
         $transaction = end($this->historyContainer);
-        $this->assertEquals(
-            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/v2.0/companies(test-company-id)/salesOrders?%24top=3&%24skip=2',
+        $this->assertEquals('https://api.businesscentral.dynamics.com/v2.0/test-env/api/'.
+                'v2.0/companies(test-company-id)/salesOrders'.
+                '?%24top=3'.
+                '&%24skip=2'.
+                '&%24expand=salesOrderLines%2Ccustomer',
             (string)$transaction['request']->getUri());
 
         foreach ($result as $salesOrder) {
@@ -72,6 +75,17 @@ class RepositoryTest extends TestCase
 
             $lastModifiedDateTime = $salesOrder->getAsDateTime('lastModifiedDateTime');
             $this->assertGreaterThan(new \DateTime('2020-12-31'), $lastModifiedDateTime);
+
+            $this->assertGreaterThan(0, count($salesOrder->get('salesOrderLines')));
+            foreach ($salesOrder->get('salesOrderLines') as $salesOrderLine) {
+                $this->assertInstanceOf(Entity::class, $salesOrderLine);
+                $this->assertNotEmpty($salesOrderLine->get('description'));
+                $this->assertGreaterThan(0, $salesOrderLine->get('quantity'));
+            }
+
+            $customer = $salesOrder->get('customer');
+            $this->assertInstanceOf(Entity::class, $customer);
+            $this->assertNotEmpty($customer->get('displayName'));
         }
     }
 }

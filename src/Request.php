@@ -29,6 +29,17 @@ class Request
         return $this;
     }
 
+    public function expand($properties): self
+    {
+        if (!empty($properties)) {
+            $this->queryOptions['$expand'] = is_array($properties)
+                ? join(',', $properties)
+                : (string)$properties;
+        }
+
+        return $this;
+    }
+
     public function top(?int $top): self
     {
         $this->queryOptions['$top'] = $top;
