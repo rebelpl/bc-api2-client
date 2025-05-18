@@ -10,24 +10,9 @@ readonly class ApiPath
     {
     }
 
-    public function getApiPublisher(): string
-    {
-        return $this->apiPublisher;
-    }
-
-    public function getApiGroup(): string
-    {
-        return $this->apiGroup;
-    }
-
-    public function getApiVersion(): string
-    {
-        return $this->apiVersion;
-    }
-
     public function __toString(): string
     {
-        return '/' . $this->apiPublisher
+        return $this->apiPublisher
             . '/' . $this->apiGroup
             . '/' . $this->apiVersion;
     }

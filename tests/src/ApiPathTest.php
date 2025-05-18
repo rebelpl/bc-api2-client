@@ -9,6 +9,6 @@ class ApiPathTest extends TestCase
     public function testToString()
     {
         $apiGroup = new ApiPath(apiPublisher: 'mycompany', apiGroup: 'sales', apiVersion: 'v2.1');
-        $this->assertEquals('/mycompany/sales/v2.1', (string)$apiGroup);
+        $this->assertEquals('mycompany/sales/v2.1', (string)$apiGroup);
     }
 }
