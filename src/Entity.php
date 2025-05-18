@@ -98,6 +98,11 @@ class Entity
             return $this;
         }
 
+        if ($value instanceof \BackedEnum) {
+            $this->data[ $key ] = $value->value;
+            return $this;
+        }
+
         $this->data[ $key ] = $value;
         return $this;
     }
