@@ -102,6 +102,17 @@ class Entity
         return $this;
     }
 
+    public function getContext(): ?string
+    {
+        return $this->context;
+    }
+
+    public function getAsEnum(string $key, string $className): mixed
+    {
+        $value = $this->get($key);
+        return call_user_func([ $className, 'tryFrom' ], $value);
+    }
+
     public function getAsDateTime(string $key): ?\DateTime
     {
         $value = $this->get($key);
