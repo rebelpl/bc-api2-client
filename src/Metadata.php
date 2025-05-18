@@ -33,15 +33,15 @@ class Metadata
     }
 
     /**
-     * @return array<int, string>
+     * @return ?array<int, string>
      */
-    public function getEnumTypeMembers(string $name, bool $nameIncludesNamespace = false): array
+    public function getEnumTypeMembers(string $name, bool $nameIncludesNamespace = false): ?array
     {
         if ($nameIncludesNamespace) {
             $name = substr($name, strlen($this->namespace) + 1);
         }
 
-        return $this->enumTypes[ $name ];
+        return $this->enumTypes[ $name ] ?? null;
     }
 
     public function addEntityType(Metadata\EntityType $entityType): void
