@@ -83,10 +83,6 @@ class Entity
 
     public function get(string $property, ?string $castType = null): mixed
     {
-        if (!isset($this->data[ $property ])) {
-            throw new OutOfBoundsException("Property $property does not exist.");
-        }
-
         $value = $this->data[ $property ];
         if (is_null($value)) {
             return null;
@@ -106,26 +102,17 @@ class Entity
 
     private function castTypeFor(string $property): ?string
     {
-        $cast = $this->casts[ $property ] ?? null;
-        if (!empty($cast)) {
-            return $cast;
-        }
-
         if (str_ends_with($property, 'Date')) {
             return 'date';
         }
 
-        if (str_ends_with($property, 'DateTime')) {
+        if (str_ends_with($property, 'DateTime')
+         || str_ends_with($property, 'ModifiedAt')
+         || str_ends_with($property, 'CreatedAt')) {
             return 'datetime';
         }
 
         return null;
-    }
-
-    public function getAsEnum(string $property, string $className): mixed
-    {
-        $value = $this->data[ $property ] ?? null;
-        return call_user_func([ $className, 'tryFrom' ], $value);
     }
 
     public function getAsDateTime(string $property, string $format = Expression::DATETIME_FORMAT): ?\DateTime

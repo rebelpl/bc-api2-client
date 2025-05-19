@@ -267,7 +267,7 @@ PHP;
             }
             else {
                 $phpType = $this->mapODataTypeToPhpType($property->getType());
-                $classProperties[] = $this->getProperty($name, $phpType, $entitySet->isUpdatable());
+                $classProperties[] = $this->getProperty($name, $phpType, null, $entitySet->isUpdatable());
             }
         }
 
@@ -337,140 +337,42 @@ PHP;
     private function getPropertyCollection(string $name, string $phpType): string
     {
         return "\t/** @var Entity\\Collection<{$phpType}> */\n"
-            . $this->getProperty($name, 'Entity\\Collection', false, false);
+            . $this->getProperty($name, 'Entity\\Collection', 'collection', false, false);
     }
 
     private function getPropertyAsEnum(string $name, string $phpType, bool $isUpdatable): string
     {
-        return
-            "\tpublic ?{$phpType} \${$name} {\n" .
-            "\t\tget => \$this->getAsEnum('{$name}', {$phpType}::class);\n" .
-            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
-            "\t}\n";
+        return $this->getProperty($name, $phpType, $phpType, $isUpdatable);
     }
 
     private function getPropertyAsDate(string $name, bool $isUpdatable): string
     {
-        return
-            "\tpublic ?\\DateTime \${$name} {\n" .
-            "\t\tget => \$this->get('{$name}', 'date');\n" .
-            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
-            "\t}\n";
+        return $this->getProperty($name, '\\DateTime', 'date', $isUpdatable);
     }
 
     private function getPropertyAsDateTime(string $name, bool $isUpdatable): string
     {
-        return
-            "\tpublic ?\\DateTime \${$name} {\n" .
-            "\t\tget => \$this->get('{$name}', 'datetime');\n" .
-            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
-            "\t}\n";
+        return $this->getProperty($name, '\\DateTime', 'datetime', $isUpdatable);
     }
 
-    private function getProperty(string $name, string $phpType, bool $isUpdatable, bool $isNullable = true): string
+    private function getProperty(string $name, string $phpType, ?string $castType = null, bool $isUpdatable = true, bool $isNullable = true): string
     {
         $nullable = $isNullable ? '?' : '';
+        if (empty($castType)) {
+            $cast = '';
+        }
+        elseif (str_starts_with($castType, 'Enums\\')) {
+            $cast = ", {$castType}::class";
+        }
+        else {
+            $cast = ", '{$castType}'";
+        }
+
         return
             "\tpublic {$nullable}{$phpType} \${$name} {\n" .
-            "\t\tget => \$this->get('{$name}');\n" .
+            "\t\tget => \$this->get('{$name}'{$cast});\n" .
             ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
             "\t}\n";
-    }
-
-    private function getterMethodForCollection(string $methodName, string $name, string $targetEntityName): string
-    {
-        return <<<PHP
-    /**
-     * @return Entity\Collection<{$targetEntityName}\Record>
-     */
-    public function {$methodName}(): Entity\Collection
-    {
-        return \$this->get(Properties::{$name}->name) ?? new Entity\Collection();
-    }
-PHP;
-    }
-
-    private function getterMethodForEntityType(string $methodName, string $name, string $targetEntityName): string
-    {
-        return <<<PHP
-    public function {$methodName}(): ?{$targetEntityName}\Record
-    {
-        return \$this->get(Properties::{$name}->name);
-    }
-PHP;
-    }
-
-    private function setterMethodForDateTime(string $methodName, string $name): string
-    {
-        return <<<PHP
-    public function {$methodName}(?\\DateTime \$value): self
-    {
-        \$this->set(Properties::{$name}->name, \$value);
-        return \$this;
-    }
-PHP;
-    }
-
-    private function setterMethodRegular(string $methodName, string $name, string $phpType): string
-    {
-        return <<<PHP
-    public function {$methodName}(?{$phpType} \$value): self
-    {
-        \$this->set(Properties::{$name}->name, \$value);
-        return \$this;
-    }
-PHP;
-    }
-
-    private function setterMethodForEnum(string $methodName, string $name, string $phpType): string
-    {
-        return <<<PHP
-    public function {$methodName}(?{$phpType} \$value): self
-    {
-        \$this->set(Properties::{$name}->name, \$value);
-        return \$this;
-    }
-PHP;
-    }
-
-    private function getterMethodForDateTime(string $methodName, string $name): string
-    {
-        return <<<PHP
-    public function {$methodName}(): ?\\DateTime
-    {
-        return \$this->getAsDateTime(Properties::{$name}->name);
-    }
-PHP;
-    }
-
-    private function getterMethodForDate(string $methodName, string $name): string
-    {
-        return <<<PHP
-    public function {$methodName}(): ?\\DateTime
-    {
-        return \$this->getAsDate(Properties::{$name}->name);
-    }
-PHP;
-    }
-
-    private function getterMethodForEnum(string $methodName, string $name, string $phpType): string
-    {
-        return <<<PHP
-    public function {$methodName}(): ?{$phpType}
-    {
-        return \$this->getAsEnum(Properties::{$name}->name, {$phpType}::class);
-    }
-PHP;
-    }
-
-    private function getterMethodRegular(string $methodName, string $name, string $phpType, string $prefix): string
-    {
-        return <<<PHP
-    public function {$methodName}(): ?{$phpType}
-    {
-        return \$this->get(Properties::{$name}->name);
-    }
-PHP;
     }
 
     private function mapODataTypeToPhpType(string $odataType): string
