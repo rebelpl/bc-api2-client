@@ -43,7 +43,6 @@ $client = new Rebel\BCApi2\Client(
 foreach ($client->getCompanies() as $company) {
     echo " - {$company->name}:\t{$company->id}\n";
 }
-
 ```
 
 ### Get Company Resources
@@ -59,11 +58,28 @@ foreach ($data['value'] as $item) {
 ### Use Repository / Entity helpers
 
 ```php
-$repository = new \Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
 $results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5);
 foreach ($results as $salesOrder) {
+
+    # use rebelpl/bc-api2-common or generate your own models for easier access to properties
     echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 }
+```
+
+### Generate Entity models for your API
+```php
+$apiRoute = '/mycompany/myapi/v1.0';
+
+# fetch Metadata from the server
+$contents = $client->fetchMetadata($apiRoute);
+
+# or from the local file
+$contents = file_get_contents('files/metadata.xml');
+
+$metadata = Rebel\BCApi2\Metadata\Factory::fromString($contents);
+$generator = new Rebel\BCApi2\Entity\Generator($metadata, $apiRoute, 'app/Models/', 'App\\Models\\');
+$generator->generateAll(true);
 ```
 
 # Tests
