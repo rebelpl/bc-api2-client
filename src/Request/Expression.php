@@ -1,5 +1,5 @@
 <?php
-namespace Rebel\BCApi2;
+namespace Rebel\BCApi2\Request;
 
 /**
  * https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/webservices/use-filter-expressions-in-odata-uris

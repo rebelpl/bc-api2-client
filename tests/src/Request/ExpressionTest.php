@@ -1,8 +1,8 @@
 <?php
-namespace Rebel\Test\BCApi2;
+namespace Rebel\Test\BCApi2\Request;
 
 use PHPUnit\Framework\TestCase;
-use Rebel\BCApi2\Expression;
+use Rebel\BCApi2\Request\Expression;
 
 class ExpressionTest extends TestCase
 {

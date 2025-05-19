@@ -3,15 +3,15 @@ namespace Rebel\BCApi2\Entity;
 
 use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
-use Rebel\BCApi2\Request;
 use Rebel\BCApi2\Exception;
+use Rebel\BCApi2\Request;
 
 readonly class Repository
 {
     public function __construct(
         protected Client $client,
         protected string $entityName,
-        protected string $apiPath = 'v2.0',
+        protected string $apiRoute = 'v2.0',
         protected string $entityClass = Entity::class)
     {
         if (!class_exists($this->entityClass)) {
@@ -26,14 +26,14 @@ readonly class Repository
 
     public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expand = []): array
     {
-        $request = (new Request($this->entityName))
+        $request = (new Request\Builder($this->entityName))
             ->where($criteria)
             ->orderBy($orderBy)
             ->top($size)
             ->skip($skip)
             ->expand($expand);
 
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $uri = $this->client->buildUri($request, $this->apiRoute);
         $response = $this->client->get($uri);
 
         if ($response->getStatusCode() !== Client::HTTP_OK) {
@@ -45,7 +45,7 @@ readonly class Repository
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = $this->hydrate($result, Entity::ODATA_CONTEXT);
+            $entities[] = $this->hydrate($result, $data[ Entity::ODATA_CONTEXT ]);
         }
 
         return $entities;
@@ -53,10 +53,10 @@ readonly class Repository
 
     public function get(string $primaryKey, array $expand = []): ?Entity
     {
-        $request = (new Request($this->entityName, $primaryKey))
+        $request = (new Request\Builder($this->entityName, $primaryKey))
             ->expand($expand);
 
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $uri = $this->client->buildUri($request, $this->apiRoute);
         $response = $this->client->get($uri);
 
         if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
@@ -88,8 +88,8 @@ readonly class Repository
             throw new \InvalidArgumentException('Record PrimaryKey is missing (entity not yet persisted?).');
         }
 
-        $request = new Request($this->entityName, $entity->getPrimaryKey());
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $request = new Request\Builder($this->entityName, $entity->getPrimaryKey());
+        $uri = $this->client->buildUri($request, $this->apiRoute);
         $response = $this->client->delete($uri, $entity->getETag());
 
         if ($response->getStatusCode() !== Client::HTTP_NO_CONTENT) {
@@ -114,8 +114,8 @@ readonly class Repository
             throw new \InvalidArgumentException('Record already persisted.');
         }
 
-        $request = new Request($this->entityName);
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $request = new Request\Builder($this->entityName);
+        $uri = $this->client->buildUri($request, $this->apiRoute);
 
         $data = $entity->toUpdate();
         $response = $this->client->post($uri, json_encode($data));
@@ -136,8 +136,8 @@ readonly class Repository
             throw new \InvalidArgumentException('Record not yet persisted.');
         }
 
-        $request = new Request($this->entityName, $entity->getPrimaryKey());
-        $uri = $this->client->buildUri($request, $this->apiPath);
+        $request = new Request\Builder($this->entityName, $entity->getPrimaryKey());
+        $uri = $this->client->buildUri($request, $this->apiRoute);
 
         $data = $entity->toUpdate();
         if (!empty($data)) {

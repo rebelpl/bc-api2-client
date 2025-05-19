@@ -1,27 +1,27 @@
 <?php
-namespace Rebel\Test\BCApi2;
+namespace Rebel\Test\BCApi2\Request;
 
 use PHPUnit\Framework\TestCase;
-use Rebel\BCApi2\Expression;
-use Rebel\BCApi2\Request;
+use Rebel\BCApi2\Request\Builder;
+use Rebel\BCApi2\Request\Expression;
 
-class RequestTest extends TestCase
+class BuilderTest extends TestCase
 {
     public function testBuildUri(): void
     {
-        $request = new Request('companies');
+        $request = new Builder('companies');
         $this->assertEquals('companies', $request->buildUri());
 
-        $request = new Request('salesInvoices');
+        $request = new Builder('salesInvoices');
         $this->assertEquals('salesInvoices', $request->buildUri());
 
-        $request = new Request('salesInvoices', '28091159-8974-ed11-9989-6045bd169deb');
+        $request = new Builder('salesInvoices', '28091159-8974-ed11-9989-6045bd169deb');
         $this->assertEquals('salesInvoices(28091159-8974-ed11-9989-6045bd169deb)', $request->buildUri());
 
-        $request = (new Request('testEntity'))->get('TEST-123');
+        $request = (new Builder('testEntity'))->get('TEST-123');
         $this->assertEquals("testEntity(TEST-123)", (string)$request);
 
-        $request = (new Request('items'))
+        $request = (new Builder('items'))
             ->select([ 'number', 'displayName' ])
             ->top(5)
             ->skip(3)

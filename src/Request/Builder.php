@@ -1,9 +1,9 @@
 <?php
-namespace Rebel\BCApi2;
+namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
 
-class Request
+class Builder
 {
     protected ?string $includePart = null;
     protected array $queryOptions = [];

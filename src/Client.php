@@ -5,7 +5,6 @@ use GuzzleHttp;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7;
-use Rebel\BCApi2\Entity\Company;
 
 readonly class Client
 {
@@ -54,9 +53,9 @@ readonly class Client
             . '/api/';
     }
 
-    public function buildUri(string $resoure, string $apiPath = 'v2.0', bool $includeCompanyId = true): string
+    public function buildUri(string $resoure, string $apiRoute = 'v2.0', bool $includeCompanyId = true): string
     {
-        $url = $apiPath;
+        $url = $apiRoute;
         if ($includeCompanyId) {
             $url .= "/companies({$this->companyId})";
         }
@@ -114,7 +113,7 @@ readonly class Client
     }
 
     /**
-     * @return Company[]
+     * @return Entity\Company[]
      * @throws Exception
      */
     public function getCompanies(): array
@@ -130,7 +129,30 @@ readonly class Client
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = new Company($result);
+            $entities[] = new Entity\Company($result);
+        }
+
+        return $entities;
+    }
+
+    /**
+     * @return Entity\ApiRoute[]
+     * @throws Exception
+     */
+    public function getApiRoutes(): array
+    {
+        $uri = $this->buildUri('apicategoryroutes', 'v2.0', false);
+        $response = $this->get($uri);
+        if ($response->getStatusCode() !== self::HTTP_OK) {
+            throw new Exception(
+                $response->getBody(),
+                $response->getStatusCode());
+        }
+
+        $entities = [];
+        $data = json_decode($response->getBody(), true);
+        foreach ($data['value'] as $result) {
+            $entities[] = new Entity\ApiRoute($result);
         }
 
         return $entities;
@@ -139,9 +161,9 @@ readonly class Client
     /**
      * @throws Exception
      */
-    public function fetchMetadata(string $apiPath = 'v2.0'): string
+    public function fetchMetadata(string $apiRoute = 'v2.0'): string
     {
-        $uri = $this->buildUri('$metadata', $apiPath, false);
+        $uri = $this->buildUri('$metadata', $apiRoute, false);
         $response = $this->get($uri);
         if ($response->getStatusCode() !== self::HTTP_OK) {
             throw new Exception(

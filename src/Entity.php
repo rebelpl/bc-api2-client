@@ -2,6 +2,7 @@
 namespace Rebel\BCApi2;
 
 use Rebel\BCApi2\Entity\Collection;
+use Rebel\BCApi2\Request\Expression;
 
 class Entity
 {
