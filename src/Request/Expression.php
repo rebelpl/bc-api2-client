@@ -7,11 +7,11 @@ namespace Rebel\BCApi2\Request;
  */
 readonly class Expression
 {
-    const DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
-    const DATE_FORMAT = 'Y-m-d';
+    const string DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
+    const string DATE_FORMAT = 'Y-m-d';
 
     // Comparison operators
-    const
+    const string
         EQ = 'eq',  // Equal to
         NE = 'ne',  // Not equal to
         GT = 'gt',  // Greater than
@@ -20,20 +20,20 @@ readonly class Expression
         LE = 'le';  // Less than or equal to
 
     // String functions
-    const
+    const string
         CONTAINS = 'contains',     // Contains a substring
         STARTSWITH = 'startswith', // Starts with a substring
         ENDSWITH = 'endswith';     // Ends with a substring
 
 
     // Logical operators
-    const
+    const string
         AND = 'and',
         OR = 'or',
         NOT = 'not';
 
     // Arithmetic operators
-    const
+    const string
         ADD = 'add',
         SUB = 'sub',
         MUL = 'mul',
@@ -41,11 +41,11 @@ readonly class Expression
         MOD = 'mod';
 
     // Collection operators
-    const
+    const string
         ANY = 'any',      // Any element in a collection satisfies a condition
         ALL = 'all';      // All elements in a collection satisfy a condition
 
-    const ALTERNATIVES = [
+    const array ALTERNATIVES = [
         '=' => self::EQ,
         '<>' => self::NE,
         '!=' => self::NE,

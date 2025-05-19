@@ -26,7 +26,7 @@ class EntityTest extends TestCase
     {
         $this->assertInstanceOf(\DateTime::class, $this->customer->getAsDateTime('lastModifiedDateTime'));
         foreach ($this->salesOrders as $entity) {
-            $this->assertInstanceOf(\DateTime::class, $entity->getAsDate('orderDate'));
+            $this->assertInstanceOf(\DateTime::class, $entity->get('orderDate'));
             $this->assertGreaterThan(new \DateTime('2020-12-31'), $entity->getAsDateTime('lastModifiedDateTime'));
         }
     }
@@ -38,7 +38,7 @@ class EntityTest extends TestCase
 
     public function testGetETag(): void
     {
-        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->getETag());
+        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->etag);
     }
 
     public function testSetDateAndTime(): void
@@ -47,11 +47,11 @@ class EntityTest extends TestCase
 
         $date = new \DateTime('2025-05-16');
         $salesOrder->set('orderDate', $date);
-        $this->assertEquals('2025-05-16', $salesOrder->get('orderDate'));
+        $this->assertEquals('2025-05-16', $salesOrder->get('orderDate')->format('Y-m-d'));
 
         $dateTime = new \DateTime('2025-12-26 01:02');
         $salesOrder->set('lastModifiedDateTime', $dateTime);
-        $this->assertEquals('2025-12-26T01:02:00.000Z', $salesOrder->get('lastModifiedDateTime'));
+        $this->assertEquals('2025-12-26T01:02:00.000Z', $salesOrder->get('lastModifiedDateTime')->format('Y-m-d\TH:i:s.v\Z'));
     }
 
     public function testToUpdate(): void

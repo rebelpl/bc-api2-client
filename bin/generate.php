@@ -9,3 +9,5 @@ $filename = 'tests/files/metadata.xml';
 $metadata = Metadata\Factory::fromString(file_get_contents($filename));
 $generator = new Entity\Generator($metadata);
 $generator->generateAll(true);
+#$generator->generateAllEnumTypes();
+#$generator->generateRecordFor('items', true);

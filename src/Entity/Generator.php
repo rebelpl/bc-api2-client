@@ -3,10 +3,11 @@ namespace Rebel\BCApi2\Entity;
 
 use Rebel\BCApi2\Metadata;
 use Rebel\BCApi2\Exception;
+use Rebel\BCApi2\Metadata\EntitySet;
 
 readonly class Generator
 {
-    const EXCLUDED_ENTITYSETS = [
+    const array EXCLUDED_ENTITYSETS = [
         'entityDefinitions',
         'companies',
         'subscriptions',
@@ -233,15 +234,47 @@ PHP;
             return false;
         }
 
-        // Build imports
         $enumNamespace = $this->buildNamespace('Enums');
         $imports = ["use Rebel\\BCApi2\\Entity;"];
         $classMapEntries = [];
+        $classProperties = [];
+        $methods = [];
+
+        $enumTypes = $this->metadata->getEnumTypes();
+        $properties = $entityType->getProperties();
+        foreach ($properties as $name => $property) {
+
+            if (str_ends_with($name, 'Filter')) {
+                continue;
+            }
+
+            if (str_starts_with($property->getType(), $this->metadata->getNamespace())) {
+                $imports[] = "use $enumNamespace;";
+                $enumName = substr($property->getType(), strlen($this->metadata->getNamespace()) + 1);
+
+                if (!in_array($enumName, $enumTypes)) {
+                    throw new Exception("Type '{$enumName}' is not a valid enum type.");
+                }
+
+                $phpType = 'Enums\\' . ucfirst($enumName);
+                $classProperties[] = $this->getPropertyAsEnum($name, $phpType, $entitySet->isUpdatable());
+            }
+            elseif (str_ends_with($property->getType(), 'DateTimeOffset')) {
+                $classProperties[] = $this->getPropertyAsDateTime($name, $entitySet->isUpdatable());
+            }
+            elseif (str_ends_with($property->getType(), 'Date')) {
+                $classProperties[] = $this->getPropertyAsDate($name, $entitySet->isUpdatable());
+            }
+            else {
+                $phpType = $this->mapODataTypeToPhpType($property->getType());
+                $classProperties[] = $this->getProperty($name, $phpType, $entitySet->isUpdatable());
+            }
+        }
 
         $navProperties = $entityType->getNavigationProperties();
         foreach ($navProperties as $name => $navProperty) {
             $targetType = $navProperty->isCollection()
-                ? substr($navProperty->getType(), 11, -1)
+                ? $navProperty->getCollectionType()
                 : $navProperty->getType();
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
@@ -253,77 +286,21 @@ PHP;
             $targetNamespace = $this->buildNamespace($targetEntityName);
 
             $imports[] = "use {$targetNamespace};";
-            $classMapEntries[] = "            Properties::{$name}->name => {$targetEntityName}\\Record::class,";
+            $classMapEntries[] = "\t\t\t'{$name}' => {$targetEntityName}\\Record::class,";
+
+            $classProperties[] = $navProperty->isCollection()
+                ? $this->getPropertyCollection($name, $targetEntityName . '\\Record')
+                : $this->getProperty($name, $targetEntityName . '\\Record', false);
         }
 
-        $methods = [];
         if ($classMapEntries) {
             $classMapContent = implode("\n", $classMapEntries);
             $methods[] = $this->constructorMethod($classMapContent);
         }
 
-        // Build property getters and setters
-        $properties = $entityType->getProperties();
-        foreach ($properties as $name => $property) {
-
-            if (str_ends_with($name, 'Filter')) {
-                continue;
-            }
-
-            $getterMethodName = 'get' . ucfirst($name);
-            $setterMethodName = 'set' . ucfirst($name);
-            if (str_starts_with($property->getType(), $this->metadata->getNamespace())) {
-                $imports[] = "use $enumNamespace;";
-                $phpType = $this->mapODataTypeToPhpType($property->getType());
-                $methods[] = $this->getterMethodForEnum($getterMethodName, $name, $phpType);
-                if ($entitySet->isUpdatable()) {
-                    $methods[] = $this->setterMethodForEnum($setterMethodName, $name, $phpType);
-                }
-            }
-            elseif (str_ends_with($property->getType(), 'DateTimeOffset')) {
-                $methods[] = $this->getterMethodForDateTime($getterMethodName, $name);
-                if ($entitySet->isUpdatable()) {
-                    $methods[] = $this->setterMethodForDateTime($setterMethodName, $name);
-                }
-            }
-            elseif (str_ends_with($property->getType(), 'Date')) {
-                $methods[] = $this->getterMethodForDate($getterMethodName, $name);
-                if ($entitySet->isUpdatable()) {
-                    $methods[] = $this->setterMethodForDateTime($setterMethodName, $name);
-                }
-            }
-            else {
-                $phpType = $this->mapODataTypeToPhpType($property->getType());
-                $prefix = $phpType === 'bool' ? 'is' : 'get';
-                $getterMethodName = $prefix . ucfirst($name);
-
-                $methods[] = $this->getterMethodRegular($getterMethodName, $name, $phpType, $prefix);
-                if ($entitySet->isUpdatable()) {
-                    $methods[] = $this->setterMethodRegular($setterMethodName, $name, $phpType);
-                }
-            }
-        }
-
-        // Build navigation property getters
-        foreach ($navProperties as $name => $navProperty) {
-            $targetType = $navProperty->isCollection()
-                ? substr($navProperty->getType(), 11, -1)
-                : $navProperty->getType();
-
-            $targetEntity = $this->metadata->getEntityType($targetType, true);
-            if (!$targetEntity) {
-                throw new Exception("Entity type '{$targetType}' not found in metadata.");
-            }
-
-            $targetEntityName = ucfirst($targetEntity->getName());
-            $getterMethodName = 'get' . ucfirst($name);
-            $methods[] = $navProperty->isCollection()
-                ? $this->getterMethodForCollection($getterMethodName, $name, $targetEntityName)
-                : $this->getterMethodForEntityType($getterMethodName, $name, $targetEntityName);
-        }
-
-        $methodsContent = implode("\n\n", $methods);
         $importContent = implode("\n", array_unique($imports));
+        $classPropertiesContent = implode("\n", $classProperties);
+        $methodsContent = implode("\n\n", $methods);
 
         // Generate file content
         $content = <<<PHP
@@ -334,6 +311,7 @@ namespace {$namespace};
 
 class Record extends Entity
 {
+{$classPropertiesContent}
 {$methodsContent}
 }
 PHP;
@@ -345,7 +323,7 @@ PHP;
     private function constructorMethod(string $classMapContent): string
     {
         return <<<PHP
-    public function __construct(array \$data = [], protected ?string \$context = null)
+    public function __construct(array \$data = [], ?string \$context = null)
     {
         parent::__construct(\$data, \$context);
 
@@ -354,6 +332,49 @@ PHP;
         ];
     }
 PHP;
+    }
+
+    private function getPropertyCollection(string $name, string $phpType): string
+    {
+        return "\t/** @var Entity\\Collection<{$phpType}> */\n"
+            . $this->getProperty($name, 'Entity\\Collection', false, false);
+    }
+
+    private function getPropertyAsEnum(string $name, string $phpType, bool $isUpdatable): string
+    {
+        return
+            "\tpublic ?{$phpType} \${$name} {\n" .
+            "\t\tget => \$this->getAsEnum('{$name}', {$phpType}::class);\n" .
+            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
+            "\t}\n";
+    }
+
+    private function getPropertyAsDate(string $name, bool $isUpdatable): string
+    {
+        return
+            "\tpublic ?\\DateTime \${$name} {\n" .
+            "\t\tget => \$this->get('{$name}', 'date');\n" .
+            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
+            "\t}\n";
+    }
+
+    private function getPropertyAsDateTime(string $name, bool $isUpdatable): string
+    {
+        return
+            "\tpublic ?\\DateTime \${$name} {\n" .
+            "\t\tget => \$this->get('{$name}', 'datetime');\n" .
+            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
+            "\t}\n";
+    }
+
+    private function getProperty(string $name, string $phpType, bool $isUpdatable, bool $isNullable = true): string
+    {
+        $nullable = $isNullable ? '?' : '';
+        return
+            "\tpublic {$nullable}{$phpType} \${$name} {\n" .
+            "\t\tget => \$this->get('{$name}');\n" .
+            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
+            "\t}\n";
     }
 
     private function getterMethodForCollection(string $methodName, string $name, string $targetEntityName): string

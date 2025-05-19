@@ -1,51 +1,39 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
-use Rebel\BCApi2\Request\Expression;
+use Rebel\BCApi2\Entity;
 
-readonly class Company
+class Company extends Entity
 {
-    public function __construct(private array $data)
-    {
+    public string $id {
+        get => $this->get('id');
     }
 
-    public function getId(): string
-    {
-        return $this->data['id'];
+    public string $name {
+        get => $this->get('name');
     }
 
-    public function getName(): string
-    {
-        return $this->data['name'];
+    public string $displayName {
+        get => $this->get('displayName');
     }
 
-    public function getDisplayName(): string
-    {
-        return $this->data['displayName'];
+    public string $systemVersion {
+        get => $this->get('systemVersion');
     }
 
-    public function getSystemVersion(): string
-    {
-        return $this->data['systemVersion'];
+    public \DateTime $systemCreatedAt {
+        get => $this->get('systemCreatedAt', 'datetime');
     }
 
-    public function getSystemCreatedAt(): \DateTime
-    {
-        return \DateTime::createFromFormat(Expression::DATETIME_FORMAT, $this->data['systemCreatedAt']);
+    public string $systemCreatedBy {
+        get => $this->get('systemCreatedBy');
     }
 
-    public function getSystemCreatedBy(): string
-    {
-        return $this->data['systemCreatedBy'];
+    public \DateTime $systemModifiedAt {
+        get => $this->get('systemModifiedAt', 'datetime');
     }
 
-    public function getSystemModifiedAt(): \DateTime
-    {
-        return \DateTime::createFromFormat(Expression::DATETIME_FORMAT, $this->data['systemModifiedAt']);
-    }
-
-    public function getSystemModifiedBy(): string
-    {
-        return $this->data['systemModifiedBy'];
+    public string $systemModifiedBy {
+        get => $this->get('systemModifiedBy');
     }
 }

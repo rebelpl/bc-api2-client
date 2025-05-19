@@ -34,4 +34,13 @@ readonly class NavigationProperty
     {
         return str_starts_with($this->type, 'Collection(');
     }
+
+    public function getCollectionType(): ?string
+    {
+        if (!$this->isCollection()) {
+            return null;
+        }
+
+        return substr($this->type, 11, -1);
+    }
 }

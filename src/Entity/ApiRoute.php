@@ -1,35 +1,31 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
-readonly class ApiRoute
+class ApiRoute
 {
-    public function __construct(private array $data)
-    {
+    public string $publisher {
+        get => $this->data['publisher'];
     }
 
-    public function getPublisher(): string
-    {
-        return $this->data['publisher'];
+    public string $group {
+        get => $this->data['group'];
     }
 
-    public function getGroup(): string
-    {
-        return $this->data['group'];
+    public string $version {
+        get => $this->data['version'];
     }
 
-    public function getVersion(): string
-    {
-        return $this->data['version'];
+    public string $route {
+        get => $this->data['route']
+            ?? ($this->publisher .'/' . $this->group . '/' . $this->version);
     }
 
-    public function getRoute(): string
+    public function __construct(private readonly array $data)
     {
-        return $this->data['route']
-            ?? ($this->getPublisher() .'/' . $this->getGroup() . '/' . $this->getVersion());
     }
 
     public function __toString(): string
     {
-        return $this->getRoute();
+        return $this->route;
     }
 }

@@ -1,24 +1,31 @@
 <?php
 namespace Rebel\BCApi2;
 
+use OutOfBoundsException;
 use Rebel\BCApi2\Entity\Collection;
 use Rebel\BCApi2\Request\Expression;
 
 class Entity
 {
-    const ODATA_ETAG = '@odata.etag';
-    const ODATA_CONTEXT = '@odata.context';
+    const string ODATA_ETAG = '@odata.etag';
+    const string ODATA_CONTEXT = '@odata.context';
 
     protected array $original = [];
     protected string $primaryKey = 'id';
     protected array $classMap = [];
+    protected array $casts = [];
 
-    /** @var Entity[][] */
-    protected array $included = [];
+    public ?string $etag {
+        get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
+        set => $this->set(Entity::ODATA_ETAG, $value);
+    }
 
-    public function __construct(protected array $data = [], protected ?string $context = null)
+    public readonly ?string $context;
+
+    public function __construct(protected array $data = [], ?string $context = null)
     {
         $this->loadData($data);
+        $this->context = $context;
     }
 
     protected function getClassnameFor(string $property): string
@@ -46,17 +53,14 @@ class Entity
     public function loadData(array $data): void
     {
         foreach ($data as $property => $value) {
-            if ($property === self::ODATA_ETAG) {
-                $this->data[ $property ] = $value;
-                $this->original = $data;
-            }
-            elseif ($property === self::ODATA_CONTEXT) {
-                $this->context = $value;
-            }
-            elseif (is_array($value)) {
+            if (is_array($value)) {
                 $this->data[ $property ] = $this->hydrate($property, $value);
             }
             else {
+                if ($property === self::ODATA_ETAG) {
+                    $this->original = $data;
+                }
+
                 $this->set($property, $value);
             }
         }
@@ -77,71 +81,97 @@ class Entity
         return $collection;
     }
 
-    public function get(string $key)
+    public function get(string $property, ?string $castType = null): mixed
     {
-        return $this->data[ $key ] ?? null;
+        if (!isset($this->data[ $property ])) {
+            throw new OutOfBoundsException("Property $property does not exist.");
+        }
+
+        $value = $this->data[ $property ];
+        if (is_null($value)) {
+            return null;
+        }
+
+        $castType = $castType ?? $this->castTypeFor($property);
+        if (is_a($castType, \BackedEnum::class, true)) {
+            return call_user_func([ $castType, 'tryFrom' ], $value);
+        }
+
+        return match ($castType) {
+            'date' => $this->getAsDateTime($property, Expression::DATE_FORMAT),
+            'datetime' => $this->getAsDateTime($property, Expression::DATETIME_FORMAT),
+            default => $value,
+        };
     }
 
-    public function set($key, $value = null): self
+    private function castTypeFor(string $property): ?string
     {
-        if (is_array($key)) {
-            foreach ($key as $field => $value) {
-                $this->set($field, $value);
+        $cast = $this->casts[ $property ] ?? null;
+        if (!empty($cast)) {
+            return $cast;
+        }
+
+        if (str_ends_with($property, 'Date')) {
+            return 'date';
+        }
+
+        if (str_ends_with($property, 'DateTime')) {
+            return 'datetime';
+        }
+
+        return null;
+    }
+
+    public function getAsEnum(string $property, string $className): mixed
+    {
+        $value = $this->data[ $property ] ?? null;
+        return call_user_func([ $className, 'tryFrom' ], $value);
+    }
+
+    public function getAsDateTime(string $property, string $format = Expression::DATETIME_FORMAT): ?\DateTime
+    {
+        $value = $this->data[ $property ] ?? null;
+        if (empty($value) || str_starts_with($value, '0001')) {
+            return null;
+        }
+
+        return \DateTime::createFromFormat($format, $value);
+    }
+
+    public function set($property, mixed $value = null): self
+    {
+        if (is_array($property)) {
+            foreach ($property as $key => $value) {
+                $this->set($key, $value);
             }
 
             return $this;
         }
 
+        if (is_null($value)) {
+            $this->data[ $property ] = null;
+            return $this;
+        }
+
         if ($value instanceof \DateTime) {
-            $this->data[ $key ] = $value->format('H:i:s.v') === '00:00:00.000'
+            $this->data[ $property ] = $value->format('H:i:s.v') === '00:00:00.000'
                 ? $value->format(Expression::DATE_FORMAT)
                 : $value->format(Expression::DATETIME_FORMAT);
             return $this;
         }
 
         if ($value instanceof \BackedEnum) {
-            $this->data[ $key ] = $value->value;
+            $this->data[ $property ] = $value->value;
             return $this;
         }
 
-        $this->data[ $key ] = $value;
+        if ($value instanceof \UnitEnum) {
+            $this->data[ $property ] = $value->name;
+            return $this;
+        }
+
+        $this->data[ $property ] = $value;
         return $this;
-    }
-
-    public function getContext(): ?string
-    {
-        return $this->context;
-    }
-
-    public function getAsEnum(string $key, string $className): mixed
-    {
-        $value = $this->get($key);
-        return call_user_func([ $className, 'tryFrom' ], $value);
-    }
-
-    public function getAsDateTime(string $key): ?\DateTime
-    {
-        $value = $this->get($key);
-        if (empty($value) || str_starts_with($value, '0001')) {
-            return null;
-        }
-
-        return \DateTime::createFromFormat(Expression::DATETIME_FORMAT, $value);
-    }
-
-    public function getAsDate(string $key): ?\DateTime
-    {
-        $value = $this->get($key);
-        if (empty($value) || str_starts_with($value, '0001')) {
-            return null;
-        }
-
-        return \DateTime::createFromFormat(Expression::DATE_FORMAT, $value);
-    }
-
-    public function toArray(): array
-    {
-        return $this->data;
     }
 
     public function toUpdate(): array
