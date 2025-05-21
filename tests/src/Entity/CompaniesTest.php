@@ -12,7 +12,6 @@ class CompaniesTest extends TestCase
     protected function setUp(): void
     {
         $data = json_decode(file_get_contents('tests/files/companies.json'), true);
-        echo count($data);
         foreach ($data['value'] as $result) {
             $this->companies[] = new Company($result);
         }
@@ -20,6 +19,7 @@ class CompaniesTest extends TestCase
 
     public function testProperties(): void
     {
+        $this->assertCount(2, $this->companies);
         foreach ($this->companies as $company) {
             $this->assertContains($company->id, [
                 'e802e7d1-5408-f011-9afa-6045bdabb318',

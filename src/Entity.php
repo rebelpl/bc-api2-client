@@ -13,7 +13,6 @@ class Entity
     protected array $original = [];
     protected string $primaryKey = 'id';
     protected array $classMap = [];
-    protected array $casts = [];
 
     public ?string $etag {
         get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
@@ -81,11 +80,19 @@ class Entity
         return $collection;
     }
 
-    public function get(string $property): mixed
+    public function get(string $property, ?string $cast = null): mixed
     {
         $value = $this->data[ $property ];
         if (is_null($value)) {
             return null;
+        }
+
+        if (in_array($cast, [ 'datetime', 'date' ])) {
+            return $this->getAsDateTime($property);
+        }
+
+        if (is_a($cast, \BackedEnum::class, true)) {
+            return $this->getAsEnum($property, $cast);
         }
 
         return $value;
@@ -116,7 +123,7 @@ class Entity
         return $this->getAsDateTime($property);
     }
 
-    public function set($property, mixed $value = null): self
+    public function set($property, mixed $value = null, ?string $cast = null): self
     {
         if (is_array($property)) {
             foreach ($property as $key => $value) {
@@ -132,8 +139,9 @@ class Entity
         }
 
         if ($value instanceof \DateTime) {
-            $this->setAsDateTime($property, $value);
-            return $this;
+            return $cast === 'date'
+                ? $this->setAsDate($property, $value)
+                : $this->setAsDateTime($property, $value);
         }
 
         if ($value instanceof \BackedEnum) {
