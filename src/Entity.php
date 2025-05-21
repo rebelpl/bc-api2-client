@@ -1,9 +1,9 @@
 <?php
 namespace Rebel\BCApi2;
 
-use OutOfBoundsException;
 use Rebel\BCApi2\Entity\Collection;
-use Rebel\BCApi2\Request\Expression;
+use Carbon\Carbon;
+
 
 class Entity
 {
@@ -81,48 +81,39 @@ class Entity
         return $collection;
     }
 
-    public function get(string $property, ?string $castType = null): mixed
+    public function get(string $property): mixed
     {
         $value = $this->data[ $property ];
         if (is_null($value)) {
             return null;
         }
 
-        $castType = $castType ?? $this->castTypeFor($property);
-        if (is_a($castType, \BackedEnum::class, true)) {
-            return call_user_func([ $castType, 'tryFrom' ], $value);
-        }
-
-        return match ($castType) {
-            'date' => $this->getAsDateTime($property, Expression::DATE_FORMAT),
-            'datetime' => $this->getAsDateTime($property, Expression::DATETIME_FORMAT),
-            default => $value,
-        };
+        return $value;
     }
 
-    private function castTypeFor(string $property): ?string
+    public function getAsEnum(string $property, string $enumClass): mixed
     {
-        if (str_ends_with($property, 'Date')) {
-            return 'date';
+        $value = $this->data[ $property ];
+        if (is_null($value)) {
+            return null;
         }
 
-        if (str_ends_with($property, 'DateTime')
-         || str_ends_with($property, 'ModifiedAt')
-         || str_ends_with($property, 'CreatedAt')) {
-            return 'datetime';
-        }
-
-        return null;
+        return call_user_func([ $enumClass, 'tryFrom' ], $value);
     }
 
-    public function getAsDateTime(string $property, string $format = Expression::DATETIME_FORMAT): ?\DateTime
+    public function getAsDateTime(string $property): ?Carbon
     {
         $value = $this->data[ $property ] ?? null;
         if (empty($value) || str_starts_with($value, '0001')) {
             return null;
         }
 
-        return \DateTime::createFromFormat($format, $value);
+        return Carbon::parse($value);
+    }
+
+    public function getAsDate(string $property): ?Carbon
+    {
+        return $this->getAsDateTime($property);
     }
 
     public function set($property, mixed $value = null): self
@@ -141,9 +132,7 @@ class Entity
         }
 
         if ($value instanceof \DateTime) {
-            $this->data[ $property ] = $value->format('H:i:s.v') === '00:00:00.000'
-                ? $value->format(Expression::DATE_FORMAT)
-                : $value->format(Expression::DATETIME_FORMAT);
+            $this->setAsDateTime($property, $value);
             return $this;
         }
 
@@ -158,6 +147,36 @@ class Entity
         }
 
         $this->data[ $property ] = $value;
+        return $this;
+    }
+
+    public function setAsDateTime(string $property, ?\DateTime $value): self
+    {
+        if (is_null($value)) {
+            $this->data[ $property ] = null;
+            return $this;
+        }
+
+        if (!$value instanceof Carbon) {
+            $value = Carbon::make($value);
+        }
+
+        $this->data[ $property ] = $value->toIso8601ZuluString();
+        return $this;
+    }
+
+    public function setAsDate(string $property, ?\DateTime $value): self
+    {
+        if (is_null($value)) {
+            $this->data[ $property ] = null;
+            return $this;
+        }
+
+        if (!$value instanceof Carbon) {
+            $value = Carbon::make($value);
+        }
+
+        $this->data[ $property ] = $value->toDateString();
         return $this;
     }
 

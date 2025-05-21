@@ -13,7 +13,9 @@
     "php": "^8.4",
     "ext-json": "*",
     "ext-simplexml": "*",
-    "guzzlehttp/guzzle": "^7.9"
+    "guzzlehttp/guzzle": "^7.9",
+    "nesbot/carbon": "^3.9",
+    "nette/php-generator": "^4.1"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.5"
@@ -21,6 +23,7 @@
   "autoload": {
     "psr-4": {
       "Rebel\\BCApi2\\": "src/",
+      "Rebel\\BCApi2\\Entity\\": "build/",
       "Rebel\\Test\\BCApi2\\": "tests/src/"
     }
   }

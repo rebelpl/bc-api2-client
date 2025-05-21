@@ -1,9 +1,14 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
-use Rebel\BCApi2\Metadata;
+use Nette\PhpGenerator\PhpFile;
+use Rebel\BCApi2\Entity;
 use Rebel\BCApi2\Exception;
-use Rebel\BCApi2\Metadata\EntitySet;
+use Rebel\BCApi2\Metadata;
+use Rebel\BCApi2\Client;
+use Nette\PhpGenerator;
+use Rebel\BCApi2\Metadata\EntityType;
+use Carbon\Carbon;
 
 readonly class Generator
 {
@@ -16,266 +21,129 @@ readonly class Generator
         'apicategoryroutes'
     ];
 
-    private string $outputDir;
     private string $namespacePrefix;
     private string $apiRoute;
 
     public function __construct(
         private Metadata $metadata,
         string           $apiRoute = 'v2.0',
-        string           $outputDir = 'src/Entity/',
         string           $namespacePrefix = 'Rebel\\BCApi2\\Entity\\')
     {
         $this->apiRoute = trim($apiRoute, '/');
-        $this->outputDir = rtrim($outputDir, '/\\') . DIRECTORY_SEPARATOR;
         $this->namespacePrefix = rtrim($namespacePrefix, '\\') . '\\';
     }
 
-    public function generateAll(bool $overwrite = false): void
+    /**
+     * @return PhpGenerator\PhpFile[]
+     */
+    public function generateAllFiles(bool $overwrite = false): array
     {
-        $this->generateAllEnumTypes($overwrite);
-        foreach ($this->metadata->getEntitySets() as $entitySet) {
-            $name = $entitySet->getName();
-            if (!in_array($name, self::EXCLUDED_ENTITYSETS)) {
-                echo ' - ' . $name . PHP_EOL;
-                $this->generateRepositoryFor($name, $overwrite);
-                $this->generatePropertiesFor($name, $overwrite);
-                $this->generateRecordFor($name, $overwrite);
-            }
+        return array_merge(
+            $this->generateFilesForAllEntitySets($overwrite),
+            $this->generateFilesForAllEnumTypes($overwrite));
+    }
+
+    public function saveFilesTo(array $files, string $folder, bool $overwrite = false): void
+    {
+        $folder = trim($folder, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        foreach ($files as $path => $file) {
+            $this->saveFileTo($file, $folder . $path . '.php', $overwrite);
         }
     }
 
-    private function buildOutputPath(string $folder, ?string $filename = null): string
+    public function saveFileTo(PhpGenerator\PhpFile $file, string $path, bool $overwrite = false): void
     {
-        return $this->outputDir .
-            // str_replace('.', DIRECTORY_SEPARATOR, $this->metadata->getNamespace()) . DIRECTORY_SEPARATOR .
-            $folder . DIRECTORY_SEPARATOR . $filename;
-    }
+        if (!$overwrite && is_file($path)) {
+            return;
+        }
 
-    private function createOutputDir(string $name): void
-    {
-        $dir = $this->buildOutputPath($name);
+        $dir = dirname($path);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
+
+        $printer = new PhpGenerator\PsrPrinter();
+        $contents = str_replace("<?php\n", "<?php", $printer->printFile($file));
+        file_put_contents($path, $contents);
     }
 
-    private function buildNamespace(string $name): string
+    private function generateClassFile($class, string $namespace, array $imports = []): PhpFile
     {
-        return ltrim($this->namespacePrefix .
-            // str_replace('.', '\\', $this->metadata->getNamespace()) . '\\' .
-            $name, '\\');
+        $file = new PhpFile();
+        $ns = new PhpGenerator\PhpNamespace($this->namespacePrefix . $namespace);
+        $ns->add($class);
+        foreach ($imports as $import => $alias) {
+            $ns->addUse($import, $alias);
+        }
+
+        $file->addNamespace($ns);
+        return $file;
     }
 
-    public function generateAllEnumTypes(bool $overwrite = false): void
+    /**
+     * @return PhpGenerator\PhpFile[]
+     * @throws Exception
+     */
+    public function generateFilesForAllEntitySets(bool $overwrite): array
     {
-        $enumTypes = $this->metadata->getEnumTypes();
-        if (empty($enumTypes)) {
-            return; // No enums to generate
+        $files = [];
+        foreach ($this->metadata->getEntitySets() as $entitySet) {
+            $name = $entitySet->getName();
+            if (!in_array($name, self::EXCLUDED_ENTITYSETS)) {
+                $files = array_merge($files, $this->generateFilesForEntitySet($name, $overwrite));
+            }
         }
 
-        foreach ($enumTypes as $type) {
-            $this->generateEnumTypeFor($type, $overwrite);
-        }
+        return $files;
     }
 
-    public function generateEnumTypeFor(string $name, bool $overwrite = false): bool
-    {
-        $enumMembers = $this->metadata->getEnumTypeMembers($name);
-        if (is_null($enumMembers)) {
-            throw new Exception("Enum type '{$name}' not found in metadata.");
-        }
-
-        // Determine namespace and class name
-        $namespace = $this->buildNamespace('Enums');
-        $className = ucfirst($name);
-
-        // Check if file exists and we're not overwriting
-        $outputFile = $this->buildOutputPath('Enums', $className . '.php');
-        if (file_exists($outputFile) && !$overwrite) {
-            return false;
-        }
-
-        // Build enum cases
-        $enumCases = [];
-        foreach ($enumMembers as $value) {
-            $name = preg_replace('/_x002[a-zA-Z0-9]_/', '', $value) ?: 'Null';
-            $enumCases[] = "    case {$name} = '$value';";
-        }
-
-        // Generate file content
-        $enumContent = implode("\n", $enumCases);
-        $content = <<<PHP
-<?php
-namespace {$namespace};
-
-enum {$className}: string
-{
-{$enumContent}
-}
-PHP;
-
-        $this->createOutputDir('Enums');
-        return file_put_contents($outputFile, $content) !== false;
-    }
-
-    public function generateRepositoryFor(string $name, bool $overwrite = false): bool
+    /**
+     * @return PhpGenerator\PhpFile[]
+     * @throws Exception
+     */
+    public function generateFilesForEntitySet(string $name): array
     {
         $entitySet = $this->metadata->getEntitySet($name) ?? $this->metadata->getEntitySetFor($name);
         if (!$entitySet) {
             throw new Exception("Entity set '{$name}' not found in metadata.");
         }
 
+        $files = [];
         $entityType = $entitySet->getEntityType();
         $entityName = ucfirst($entityType->getName());
 
-        // Determine namespace and class name
-        $namespace = $this->buildNamespace($entityName);
-        $className = 'Repository';
+        // properties
+        $class = $this->generatePropertiesFor($entityType);
+        $path = $entityName . DIRECTORY_SEPARATOR . $class->getName();
+        $files[ $path ] = $this->generateClassFile($class, $entityName);
 
-        // Check if file exists and we're not overwriting
-        $outputFile = $this->buildOutputPath($entityName, $className . '.php');
-        if (file_exists($outputFile) && !$overwrite) {
-            return false;
-        }
+        // repository
+        $class = $this->generateRepositoryFor($entitySet);
+        $path = $entityName . DIRECTORY_SEPARATOR . $class->getName();
+        $files[$path] = $this->generateClassFile($class, $entityName, [
+            Client::class => null,
+            Repository::class => 'EntityRepository',
+        ]);
 
-        $content = <<<PHP
-<?php
-namespace {$namespace};
+        // record
+        $class = $this->generateRecordFor($entityType, $entitySet->isUpdatable());
+        $path = $entityName  . DIRECTORY_SEPARATOR . $class->getName();
+        $files[$path] = $this->generateClassFile($class, $entityName, array_merge([
+            Carbon::class => null,
+            Entity::class => null,
+            $this->namespacePrefix . 'Enums' => null,
+        ], $this->generateRecordImports($entityType)));
 
-use Rebel\BCApi2\Client;
-use Rebel\BCApi2\Entity\Repository as EntityRepository;
-
-readonly class {$className} extends EntityRepository
-{
-    public function __construct(Client \$client)
-    {
-        parent::__construct(\$client, '{$entitySet->getName()}', '{$this->apiRoute}', Record::class);
-    }
-}
-PHP;
-
-        $this->createOutputDir($entityName);
-        return file_put_contents($outputFile, $content) !== false;
+        return $files;
     }
 
-    public function generatePropertiesFor(string $name, bool $overwrite = false): bool
+    protected function generateRecordImports(EntityType $entityType): array
     {
-        $entitySet = $this->metadata->getEntitySet($name) ?? $this->metadata->getEntitySetFor($name);
-        if (!$entitySet) {
-            throw new Exception("Entity set '{$name}' not found in metadata.");
-        }
-
-        $entityType = $entitySet->getEntityType();
-        $entityName = ucfirst($entityType->getName());
-
-        $navProperties = $entityType->getNavigationProperties();
-        $properties = $entityType->getProperties();
-
-        if (empty($navProperties) && empty($properties)) {
-            return false; // No properties to generate
-        }
-
-        // Determine namespace and class name
-        $namespace = $this->buildNamespace($entityName);
-        $className = 'Properties';
-
-        // Check if file exists and we're not overwriting
-        $outputFile = $this->buildOutputPath($entityName, $className . '.php');
-        if (file_exists($outputFile) && !$overwrite) {
-            return false;
-        }
-
-        // Build enum cases
-        $enumCases = [];
-        foreach ($properties as $name => $property) {
-            $enumCases[] = "    case {$name};";
-        }
-
-        $enumCases[] = '';
-        foreach ($navProperties as $name => $property) {
-            $enumCases[] = "    case {$name};";
-        }
-
-        $enumContent = implode("\n", $enumCases);
-
-        // Generate file content
-        $content = <<<PHP
-<?php
-namespace {$namespace};
-
-enum {$className}
-{
-{$enumContent}
-}
-PHP;
-
-        $this->createOutputDir($entityName);
-        return file_put_contents($outputFile, $content) !== false;
-    }
-
-    public function generateRecordFor(string $name, bool $overwrite = false): bool
-    {
-        $entitySet = $this->metadata->getEntitySet($name) ?? $this->metadata->getEntitySetFor($name);
-        if (!$entitySet) {
-            throw new Exception("Entity set '{$name}' not found in metadata.");
-        }
-
-        $entityType = $entitySet->getEntityType();
-        $entityName = ucfirst($entityType->getName());
-
-        // Determine namespace and class name
-        $namespace = $this->buildNamespace($entityName);
-        $className = 'Record';
-
-        // Check if file exists and we're not overwriting
-        $outputFile = $this->buildOutputPath($entityName, $className . '.php');
-        if (file_exists($outputFile) && !$overwrite) {
-            return false;
-        }
-
-        $enumNamespace = $this->buildNamespace('Enums');
-        $imports = ["use Rebel\\BCApi2\\Entity;"];
-        $classMapEntries = [];
-        $classProperties = [];
-        $methods = [];
-
-        $enumTypes = $this->metadata->getEnumTypes();
-        $properties = $entityType->getProperties();
-        foreach ($properties as $name => $property) {
-
-            if (str_ends_with($name, 'Filter')) {
-                continue;
-            }
-
-            if (str_starts_with($property->getType(), $this->metadata->getNamespace())) {
-                $imports[] = "use $enumNamespace;";
-                $enumName = substr($property->getType(), strlen($this->metadata->getNamespace()) + 1);
-
-                if (!in_array($enumName, $enumTypes)) {
-                    throw new Exception("Type '{$enumName}' is not a valid enum type.");
-                }
-
-                $phpType = 'Enums\\' . ucfirst($enumName);
-                $classProperties[] = $this->getPropertyAsEnum($name, $phpType, $entitySet->isUpdatable());
-            }
-            elseif (str_ends_with($property->getType(), 'DateTimeOffset')) {
-                $classProperties[] = $this->getPropertyAsDateTime($name, $entitySet->isUpdatable());
-            }
-            elseif (str_ends_with($property->getType(), 'Date')) {
-                $classProperties[] = $this->getPropertyAsDate($name, $entitySet->isUpdatable());
-            }
-            else {
-                $phpType = $this->mapODataTypeToPhpType($property->getType());
-                $classProperties[] = $this->getProperty($name, $phpType, null, $entitySet->isUpdatable());
-            }
-        }
-
-        $navProperties = $entityType->getNavigationProperties();
-        foreach ($navProperties as $name => $navProperty) {
-            $targetType = $navProperty->isCollection()
-                ? $navProperty->getCollectionType()
-                : $navProperty->getType();
+        $imports = [];
+        foreach ($entityType->getNavigationProperties() as $property) {
+            $targetType = $property->isCollection()
+                ? $property->getCollectionType()
+                : $property->getType();
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
             if (!$targetEntity) {
@@ -283,133 +151,202 @@ PHP;
             }
 
             $targetEntityName = ucfirst($targetEntity->getName());
-            $targetNamespace = $this->buildNamespace($targetEntityName);
-
-            $imports[] = "use {$targetNamespace};";
-            $classMapEntries[] = "\t\t\t'{$name}' => {$targetEntityName}\\Record::class,";
-
-            $classProperties[] = $navProperty->isCollection()
-                ? $this->getPropertyCollection($name, $targetEntityName . '\\Record')
-                : $this->getProperty($name, $targetEntityName . '\\Record', false);
+            $imports[ $this->namespacePrefix . $targetEntityName ] = null;
         }
 
-        if ($classMapEntries) {
-            $classMapContent = implode("\n", $classMapEntries);
-            $methods[] = $this->constructorMethod($classMapContent);
-        }
-
-        $importContent = implode("\n", array_unique($imports));
-        $classPropertiesContent = implode("\n", $classProperties);
-        $methodsContent = implode("\n\n", $methods);
-
-        // Generate file content
-        $content = <<<PHP
-<?php
-namespace {$namespace};
-
-{$importContent}
-
-class Record extends Entity
-{
-{$classPropertiesContent}
-{$methodsContent}
-}
-PHP;
-
-        $this->createOutputDir($entityName);
-        return file_put_contents($outputFile, $content) !== false;
+        return $imports;
     }
 
-    private function constructorMethod(string $classMapContent): string
+    protected function generateRecordFor(EntityType $entityType, bool $isUpdateable): PhpGenerator\ClassType
     {
-        return <<<PHP
-    public function __construct(array \$data = [], ?string \$context = null)
-    {
-        parent::__construct(\$data, \$context);
+        $className = 'Record';
+        $class = new PhpGenerator\ClassType($className)
+            ->setExtends(Entity::class);
 
-        \$this->classMap = [
-{$classMapContent}
-        ];
-    }
-PHP;
-    }
-
-    private function getPropertyCollection(string $name, string $phpType): string
-    {
-        return "\t/** @var Entity\\Collection<{$phpType}> */\n"
-            . $this->getProperty($name, 'Entity\\Collection', 'collection', false, false);
-    }
-
-    private function getPropertyAsEnum(string $name, string $phpType, bool $isUpdatable): string
-    {
-        return $this->getProperty($name, $phpType, $phpType, $isUpdatable);
-    }
-
-    private function getPropertyAsDate(string $name, bool $isUpdatable): string
-    {
-        return $this->getProperty($name, '\\DateTime', 'date', $isUpdatable);
-    }
-
-    private function getPropertyAsDateTime(string $name, bool $isUpdatable): string
-    {
-        return $this->getProperty($name, '\\DateTime', 'datetime', $isUpdatable);
-    }
-
-    private function getProperty(string $name, string $phpType, ?string $castType = null, bool $isUpdatable = true, bool $isNullable = true): string
-    {
-        $nullable = $isNullable ? '?' : '';
-        if (empty($castType)) {
-            $cast = '';
-        }
-        elseif (str_starts_with($castType, 'Enums\\')) {
-            $cast = ", {$castType}::class";
-        }
-        else {
-            $cast = ", '{$castType}'";
-        }
-
-        return
-            "\tpublic {$nullable}{$phpType} \${$name} {\n" .
-            "\t\tget => \$this->get('{$name}'{$cast});\n" .
-            ($isUpdatable ? "\t\tset => \$this->set('{$name}', \$value);\n" : "") .
-            "\t}\n";
-    }
-
-    private function mapODataTypeToPhpType(string $odataType): string
-    {
-        // Handle collection types
-        if (str_starts_with($odataType, 'Collection(')) {
-            $odataType = substr($odataType, 11, -1);
-            throw new Exception("Entity type '{$odataType}' is a collection.");
-        }
-
-        // Handle enum types
-        if (str_starts_with($odataType, $this->metadata->getNamespace())) {
-            $enumTypes = $this->metadata->getEnumTypes();
-            $odataType = substr($odataType, strlen($this->metadata->getNamespace()) + 1);
-            if (!in_array($odataType, $enumTypes)) {
-                throw new Exception("Entity type '{$odataType}' is not a valid enum type.");
+        $properties = $entityType->getProperties();
+        foreach ($properties as $name => $property) {
+            if (str_ends_with($name, 'Filter')) {
+                continue;
             }
 
-            return 'Enums\\' . ucfirst($odataType);
+            $type = $this->matchPropertTypeToPhpType($property->getType());
+            $class->addMember(
+                $this->generateRecordProperty($name, $type, $isUpdateable)
+            );
         }
 
-        $typeMap = [
-            'Edm.String' => 'string',
-            'Edm.Int32' => 'int',
-            'Edm.Int64' => 'int',
-            'Edm.Decimal' => 'float',
-            'Edm.Double' => 'float',
+        $classMap = [];
+        $navProperties = $entityType->getNavigationProperties();
+        foreach ($navProperties as $name => $property) {
+
+            $targetType = $property->isCollection()
+                ? $property->getCollectionType()
+                : $property->getType();
+
+            $targetEntity = $this->metadata->getEntityType($targetType, true);
+            if (!$targetEntity) {
+                throw new Exception("Entity type '{$targetType}' not found in metadata.");
+            }
+
+            $targetEntityName = ucfirst($targetEntity->getName()) . '\\Record';
+            if ($property->isCollection()) {
+                $class->addMember(
+                    $this->generateRecordProperty($name, Entity\Collection::class, false)
+                        ->addComment("@var ?Entity\\Collection<{$targetEntityName}>")
+                );
+            }
+            else {
+                $class->addMember(
+                    $this->generateRecordProperty($name, $this->namespacePrefix . $targetEntityName, false)
+                        ->addComment("@var ?{$targetEntityName}")
+                );
+            }
+
+            $classMap[ $name ] = $targetEntityName;
+        }
+
+        $list = '';
+        foreach ($classMap as $key => $value) {
+            $list .= "\t'{$key}' => {$value}::class,\n";
+        }
+
+        $constructor = $class->addMethod('__construct')
+            ->setBody("parent::__construct(\$data, \$context);\n\n")
+            ->addBody("\$this->classMap = [\n{$list}];");
+
+        $constructor->addParameter('data', [])
+            ->setType('array');
+
+        $constructor->addParameter('context', null)
+            ->setType('string')
+            ->setNullable();
+
+        return $class;
+    }
+
+    protected function generateRecordProperty(string $name, string $type, bool $isUpdateable): PhpGenerator\Property
+    {
+        // id is always read-only
+        if ($name === 'id') {
+            $isUpdateable = false;
+        }
+
+        $property = new PhpGenerator\Property($name)->setNullable();
+
+        // enum type
+        if (str_starts_with($type, $this->metadata->getNamespace())) {
+            $enumName = ucfirst(substr($type, strlen($this->metadata->getNamespace()) + 1));
+            $property->setType($this->namespacePrefix . 'Enums\\' . $enumName);
+
+            $property->addHook('get', "\$this->getAsEnum('{$name}', Enums\\{$enumName}::class)");
+            if ($isUpdateable) {
+                $property->addHook('set', "\$this->set('{$name}', \$value)");
+            }
+
+            return $property;
+        }
+
+        // datetime types
+        if ($type === \DateTime::class) {
+            $property->setType(Carbon::class);
+            $property->addHook('get', "\$this->getAsDateTime('{$name}')");
+            if ($isUpdateable) {
+                $property->addHook('set', $property->getType() === 'Edm.Date'
+                    ? "\$this->setAsDate('{$name}', \$value)"
+                    : "\$this->setAsDateTime('{$name}', \$value)");
+            }
+
+            return $property;
+        }
+
+        // default
+        $property->setType($type);
+        $property->addHook('get', "\$this->get('{$name}')");
+        if ($isUpdateable) {
+            $property->addHook('set', "\$this->set('{$name}', \$value)");
+        }
+
+        return $property;
+    }
+
+    private function matchPropertTypeToPhpType(string $type): string
+    {
+        return match ($type) {
+            'Edm.String', 'Edm.Guid', 'Edm.Stream', 'Edm.Binary' => 'string',
+            'Edm.Int32', 'Edm.Int64' => 'int',
+            'Edm.Decimal', 'Edm.Double' => 'float',
             'Edm.Boolean' => 'bool',
-            'Edm.Guid' => 'string',
-            'Edm.Binary' => 'string',
-            'Edm.Stream' => 'string',
-        ];
+            'Edm.Date', 'Edm.DateTimeOffset' => \DateTime::class,
+            default => $type,
+        };
+    }
 
-        if (!isset($typeMap[ $odataType ])) {
-            throw new Exception("Entity type '{$odataType}' cannot be mapped correctly.");
+    protected function generateRepositoryFor(Metadata\EntitySet $entitySet): PhpGenerator\ClassType
+    {
+        $className = 'Repository';
+        $class = new PhpGenerator\ClassType($className)
+            ->setExtends(Repository::class)
+            ->setReadOnly();
+
+        $constructor = $class->addMethod('__construct')
+            ->setBody("parent::__construct(\$client, '{$entitySet->getName()}', '{$this->apiRoute}', Record::class);");
+
+        $constructor->addParameter('client')
+            ->setType(Client::class);
+
+        return $class;
+    }
+
+    protected function generatePropertiesFor(Metadata\EntityType $entityType): PhpGenerator\EnumType
+    {
+        $className = 'Properties';
+        $class = new PhpGenerator\EnumType($className);
+
+        $properties = $entityType->getProperties();
+        foreach ($properties as $name => $property) {
+            $class->addCase($name);
         }
 
-        return $typeMap[ $odataType ];
+        $navProperties = $entityType->getNavigationProperties();
+        foreach ($navProperties as $name => $property) {
+            $class->addCase($name);
+        }
+
+        return $class;
+    }
+
+    /**
+     * @return PhpGenerator\PhpFile[]
+     * @throws Exception
+     */
+    public function generateFilesForAllEnumTypes(bool $overwrite = false): array
+    {
+        $files = [];
+        $enumTypes = $this->metadata->getEnumTypes();
+        foreach ($enumTypes as $name) {
+            $class = $this->generateEnumTypeFor($name);
+            $path = 'Enums' . DIRECTORY_SEPARATOR . $class->getName();
+            $files[ $path ] = $this->generateClassFile($class, 'Enums');
+        }
+
+        return $files;
+    }
+
+    public function generateEnumTypeFor(string $name): PhpGenerator\EnumType
+    {
+        $enumMembers = $this->metadata->getEnumTypeMembers($name);
+        if (is_null($enumMembers)) {
+            throw new Exception("Enum type '{$name}' not found in metadata.");
+        }
+
+        $className = ucfirst($name);
+        $enum = new PhpGenerator\EnumType($className);
+
+        foreach ($enumMembers as $value) {
+            $case = preg_replace('/_x002[a-zA-Z0-9]_/', '', $value) ?: 'Null';
+            $enum->addCase($case, $value);
+        }
+
+        return $enum;
     }
 }
