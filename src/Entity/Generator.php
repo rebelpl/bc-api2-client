@@ -33,11 +33,11 @@ readonly class Generator
     /**
      * @return PhpGenerator\PhpFile[]
      */
-    public function generateAllFiles(bool $overwrite = false): array
+    public function generateAllFiles(): array
     {
         return array_merge(
-            $this->generateFilesForAllEntitySets($overwrite),
-            $this->generateFilesForAllEnumTypes($overwrite));
+            $this->generateFilesForAllEntitySets(),
+            $this->generateFilesForAllEnumTypes());
     }
 
     public function saveFilesTo(array $files, string $folder, bool $overwrite = false): void
@@ -81,13 +81,13 @@ readonly class Generator
      * @return PhpGenerator\PhpFile[]
      * @throws Exception
      */
-    public function generateFilesForAllEntitySets(bool $overwrite): array
+    public function generateFilesForAllEntitySets(): array
     {
         $files = [];
         foreach ($this->metadata->getEntitySets() as $entitySet) {
             $name = $entitySet->getName();
             if (!in_array($name, self::EXCLUDED_ENTITYSETS)) {
-                $files = array_merge($files, $this->generateFilesForEntitySet($name, $overwrite));
+                $files = array_merge($files, $this->generateFilesForEntitySet($name));
             }
         }
 
@@ -117,7 +117,7 @@ readonly class Generator
         // repository
         $class = $this->generateRepositoryFor($entitySet);
         $path = $entityName . DIRECTORY_SEPARATOR . $class->getName();
-        $files[$path] = $this->generateClassFile($class, $entityName, [
+        $files[ $path ] = $this->generateClassFile($class, $entityName, [
             Client::class => null,
             Repository::class => 'EntityRepository',
         ]);
@@ -125,7 +125,7 @@ readonly class Generator
         // record
         $class = $this->generateRecordFor($entityType, $entitySet->isUpdatable());
         $path = $entityName  . DIRECTORY_SEPARATOR . $class->getName();
-        $files[$path] = $this->generateClassFile($class, $entityName, array_merge([
+        $files[ $path ] = $this->generateClassFile($class, $entityName, array_merge([
             Carbon::class => null,
             Entity::class => null,
             $this->namespacePrefix . 'Enums' => null,
@@ -316,7 +316,7 @@ readonly class Generator
      * @return PhpGenerator\PhpFile[]
      * @throws Exception
      */
-    public function generateFilesForAllEnumTypes(bool $overwrite = false): array
+    public function generateFilesForAllEnumTypes(): array
     {
         $files = [];
         $enumTypes = $this->metadata->getEnumTypes();

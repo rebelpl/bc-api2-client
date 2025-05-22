@@ -9,5 +9,5 @@ $filename = 'tests/files/metadata.xml';
 $metadata = Metadata\Factory::fromString(file_get_contents($filename));
 $generator = new Entity\Generator($metadata);
 
-$files = $generator->generateAllFiles(true);
-$generator->saveFilesTo($files,'build/');
+$files = $generator->generateAllFiles();
+$generator->saveFilesTo($files,'build/', true);
