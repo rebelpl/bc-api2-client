@@ -2,30 +2,50 @@
 namespace Rebel\BCApi2;
 
 use GuzzleHttp;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7;
+use Psr\Http\Client\ClientInterface;
+use Rebel\BCApi2\Entity\ApiRoute;
+use Rebel\BCApi2\Entity\Company;
+use Rebel\BCApi2\Entity\Repository;
 
-readonly class Client
+class Client
 {
-    const
+    const string BASE_URL = 'https://api.businesscentral.dynamics.com/v2.0';
+
+    const int
         HTTP_OK = 200,
         HTTP_CREATED = 201,
         HTTP_NO_CONTENT = 204,
         HTTP_NOT_FOUND = 404;
 
-    const HEADER_IFMATCH = 'If-Match';
-    const BASE_URL = 'https://api.businesscentral.dynamics.com/v2.0';
+    const string HEADER_IFMATCH = 'If-Match';
+    protected ClientInterface $client;
+    private readonly string $baseUrl;
+    private readonly string $apiRoute;
 
-    protected GuzzleHttp\Client $client;
+    protected array $defaultHeaders;
 
+    /**
+     * Available $options:
+     * - baseUrl: API endpoint, defaults to https://api.businesscentral.dynamics.com/v2.0
+     * - httpClient: instance of Psr\Http\Client\ClientInterface
+     */
     public function __construct(
-        private string  $accessToken,
-        private string  $environment,
-        private ?string $companyId = null,
-        array $options = [])
+        private readonly string  $accessToken,
+        string  $environment,
+        string $apiRoute = 'v2.0',
+        private readonly ?string $companyId = null,
+        array                    $options = [])
     {
-        $this->initHttpClient($options);
+        $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
+        $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
+            . "/{$environment}/api/";
+        $this->apiRoute = trim($apiRoute, '/');
+
+        $this->defaultHeaders = [
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ];
     }
 
     private function initHttpClient(array $options): void
@@ -40,27 +60,28 @@ readonly class Client
         ], $options));
     }
 
-    public function getHttpClient(): GuzzleHttp\Client
+    public function getHttpClient(): ClientInterface
     {
         return $this->client;
     }
 
     public function getBaseUrl(): string
     {
-        return
-            self::BASE_URL
-            . '/' . $this->environment
-            . '/api/';
+        return $this->baseUrl;
     }
 
-    public function buildUri(string $resoure, string $apiRoute = 'v2.0', bool $includeCompanyId = true): string
+    public function getCompanyPath(): string
     {
-        $url = $apiRoute;
-        if ($includeCompanyId) {
-            $url .= "/companies({$this->companyId})";
+        if (empty($this->companyId)) {
+            throw new Exception('You cannot call company resources without valid companyId. Run getCompanies() to obtain a list of companies.');
         }
 
-        return $url . '/'. $resoure;
+        return "companies({$this->companyId})";
+    }
+
+    public function buildUri(string $resource): Psr7\Uri
+    {
+        return new Psr7\Uri($this->baseUrl . $this->apiRoute . '/' . ltrim($resource, '/'));
     }
 
     public function get(string $uri): ?Psr7\Response
@@ -85,31 +106,17 @@ readonly class Client
 
     public function run(string $method, string $uri, ?string $body = null, ?string $etag = null): ?Psr7\Response
     {
-        $options = [];
-        if (!empty($body)) {
-            $options['body'] = $body;
-        }
-
-        if (!empty($etag)) {
-            $options['headers'][ self::HEADER_IFMATCH ] = $etag;
-        }
-
-        return $this->getResponse($method, $uri, $options);
+        $request = new Request($method, $uri, $body, $etag);
+        return $this->call($request);
     }
 
-    /**
-     * @throws GuzzleException
-     */
-    protected function getResponse(string $method, string $uri, array $options = []): Psr7\Response
+    public function call(Request $request): ?Psr7\Response
     {
-        try {
-            $response = $this->client->request($method, $uri, $options);
-        }
-        catch (ClientException $e) {
-            return $e->getResponse();
-        }
+        $request = $request
+            ->withUri($this->buildUri($request->getUri()))
+            ->withHeader('Authorization', 'Bearer ' . $this->accessToken);
 
-        return $response;
+        return $this->client->sendRequest($request);
     }
 
     /**
@@ -118,21 +125,8 @@ readonly class Client
      */
     public function getCompanies(): array
     {
-        $uri = $this->buildUri('companies', 'v2.0', false);
-        $response = $this->get($uri);
-        if ($response->getStatusCode() !== self::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
-        }
-
-        $entities = [];
-        $data = json_decode($response->getBody(), true);
-        foreach ($data['value'] as $result) {
-            $entities[] = new Entity\Company($result);
-        }
-
-        return $entities;
+        $repository = new Repository($this, 'companies', Company::class, false);
+        return $repository->findAll();
     }
 
     /**
@@ -141,37 +135,8 @@ readonly class Client
      */
     public function getApiRoutes(): array
     {
-        $uri = $this->buildUri('apicategoryroutes', 'v2.0', false);
-        $response = $this->get($uri);
-        if ($response->getStatusCode() !== self::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
-        }
-
-        $entities = [];
-        $data = json_decode($response->getBody(), true);
-        foreach ($data['value'] as $result) {
-            $entities[] = new Entity\ApiRoute($result);
-        }
-
-        return $entities;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function fetchMetadata(string $apiRoute = 'v2.0'): string
-    {
-        $uri = $this->buildUri('$metadata', $apiRoute, false);
-        $response = $this->get($uri);
-        if ($response->getStatusCode() !== self::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
-        }
-
-        return $response->getBody()->getContents();
+        $repository = new Repository($this, 'apicategoryroutes', ApiRoute::class, false);
+        return $repository->findAll();
     }
 
     /**
@@ -181,5 +146,20 @@ readonly class Client
     {
         $metadata = $this->fetchMetadata();
         return Metadata\Factory::fromString($metadata);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function fetchMetadata(string $apiRoute = 'v2.0'): string
+    {
+        $response = $this->get('$metadata');
+        if ($response->getStatusCode() !== self::HTTP_OK) {
+            throw new Exception(
+                $response->getBody(),
+                $response->getStatusCode());
+        }
+
+        return $response->getBody()->getContents();
     }
 }

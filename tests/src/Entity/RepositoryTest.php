@@ -31,7 +31,8 @@ class RepositoryTest extends TestCase
         $this->client = new Client(
             accessToken: 'test-token',
             environment: 'test-env',
-            companyId: 'test-company-id',
+            apiRoute:    'foo/bar/v1.5',
+            companyId:   'test-company-id',
             options: [
                 'handler' => $stack,
             ]
@@ -41,7 +42,7 @@ class RepositoryTest extends TestCase
     public function testEntityClassDoesNotExist()
     {
         $this->expectException(Exception::class);
-        new Repository($this->client, 'salesInvoice', 'v2.0', 'NotExistingClassName');
+        new Repository($this->client, 'salesInvoice', 'NotExistingClassName');
     }
 
     public function testEntityClassDefault()
@@ -62,7 +63,7 @@ class RepositoryTest extends TestCase
 
         $transaction = end($this->historyContainer);
         $this->assertEquals('https://api.businesscentral.dynamics.com/v2.0/test-env/api/'.
-                'v2.0/companies(test-company-id)/salesOrders'.
+                'foo/bar/v1.5/companies(test-company-id)/salesOrders'.
                 '?%24top=3'.
                 '&%24skip=2'.
                 '&%24expand=salesOrderLines%2Ccustomer',

@@ -3,16 +3,17 @@ namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
 
-class Builder
+class UriBuilder
 {
+    private readonly string $resourceUrl;
     protected ?string $includePart = null;
     protected array $queryOptions = [];
 
     public function __construct(
-        private readonly string $resourceUrl,
+        string $resourceUrl,
         private ?string $primaryKey = null)
     {
-
+        $this->resourceUrl = trim($resourceUrl, '/');
     }
 
     public function get($primaryKey): self
