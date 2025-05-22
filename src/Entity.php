@@ -190,8 +190,42 @@ class Entity
 
     public function toUpdate(): array
     {
-        return array_filter($this->data, function ($key) {
-            return $this->data[ $key ] !== $this->original[ $key ];
-        }, ARRAY_FILTER_USE_KEY);
+        $result = [];
+
+        foreach ($this->data as $key => $value) {
+            // Skip OData metadata fields
+            if ($key === self::ODATA_ETAG || $key === self::ODATA_CONTEXT) {
+                continue;
+            }
+
+            // If the property is a nested entity, recursively process it
+            if ($value instanceof Entity) {
+                $nestedData = $value->toUpdate();
+                if (!empty($nestedData)) {
+                    $result[$key] = $nestedData;
+                }
+            }
+            // If the property is a collection of entities, recursively process each entity
+            elseif ($value instanceof Collection) {
+                $collectionData = [];
+                foreach ($value as $entity) {
+                    if ($entity instanceof Entity) {
+                        $entityData = $entity->toUpdate();
+                        if (!empty($entityData)) {
+                            $collectionData[] = $entityData;
+                        }
+                    }
+                }
+                if (!empty($collectionData)) {
+                    $result[$key] = $collectionData;
+                }
+            }
+            // For non-entity properties, include them if they've changed
+            elseif (!isset($this->original[$key]) || $this->data[$key] !== $this->original[$key]) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

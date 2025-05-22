@@ -67,4 +67,36 @@ class EntityTest extends TestCase
             'displayName' => 'John Doe',
         ], $this->customer->toUpdate());
     }
+
+    public function testDeepInsert(): void
+    {
+        // Get a sales order with nested entities
+        $salesOrder = $this->salesOrders[0];
+
+        // Verify that initially there are no changes
+        $this->assertEquals([], $salesOrder->toUpdate());
+
+        // Modify a property in the nested customer entity
+        $customer = $salesOrder->get('customer');
+        $this->assertInstanceOf(Entity::class, $customer);
+        $customer->set('displayName', 'Modified Customer Name');
+
+        // Modify a property in one of the nested salesOrderLines entities
+        $salesOrderLines = $salesOrder->get('salesOrderLines');
+        $this->assertNotEmpty($salesOrderLines);
+        $salesOrderLine = $salesOrderLines[0];
+        $this->assertInstanceOf(Entity::class, $salesOrderLine);
+        $salesOrderLine->set('description', 'Modified Description');
+
+        // Check that toUpdate returns the nested changes
+        $updateData = $salesOrder->toUpdate();
+        $this->assertArrayHasKey('customer', $updateData);
+        $this->assertArrayHasKey('displayName', $updateData['customer']);
+        $this->assertEquals('Modified Customer Name', $updateData['customer']['displayName']);
+
+        $this->assertArrayHasKey('salesOrderLines', $updateData);
+        $this->assertCount(1, $updateData['salesOrderLines']);
+        $this->assertArrayHasKey('description', $updateData['salesOrderLines'][0]);
+        $this->assertEquals('Modified Description', $updateData['salesOrderLines'][0]['description']);
+    }
 }
