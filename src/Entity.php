@@ -202,7 +202,7 @@ class Entity
             if ($value instanceof Entity) {
                 $nestedData = $value->toUpdate();
                 if (!empty($nestedData)) {
-                    $result[$key] = $nestedData;
+                    $result[ $key ] = $nestedData;
                 }
             }
             // If the property is a collection of entities, recursively process each entity
@@ -217,12 +217,12 @@ class Entity
                     }
                 }
                 if (!empty($collectionData)) {
-                    $result[$key] = $collectionData;
+                    $result[ $key ] = $collectionData;
                 }
             }
             // For non-entity properties, include them if they've changed
-            elseif (!isset($this->original[$key]) || $this->data[$key] !== $this->original[$key]) {
-                $result[$key] = $value;
+            elseif (!isset($this->original[ $key ]) || $this->data[ $key ] !== $this->original[ $key ]) {
+                $result[ $key ] = $value;
             }
         }
 
