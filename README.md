@@ -34,7 +34,7 @@ $token = $provider->getAccessToken('client_credentials', [
 $client = new Rebel\BCApi2\Client(
     accessToken: $token->getToken(),
     environment: 'sandbox',
-    companyId: '1234567890',
+    companyId: '123456',
 );
 ```
 
@@ -45,41 +45,76 @@ foreach ($client->getCompanies() as $company) {
 }
 ```
 
-### Get Company Resources
+### Get Resources
 ```php
-// v2.0/companies(1234567890)/items?$top=3
-$uri = $client->buildUri('items?$top=3');
-$response = $client->get($uri);
+$response = $client->get('companies(123456)/items?$top=3');
 $data = json_decode($response->getBody(), true);
 foreach ($data['value'] as $item) {
     echo " - {$item['number']}:\t{$item['displayName']}\n";
 }
 ```
+
+### Use Request helper
+```php
+$request = new Rebel\BCApi2\Request('PATCH', 'companies(123456)/items(32d80403)',
+    body: json_encode([
+        'displayName' => 'Updated Item Name',
+        'unitPrice' => 99.95,
+     ]), etag: 'W/"JzE5OzIxMzk2MzA0ODM0ODgyMTU4MDgxOzAwOyc="');
+$response = $client->call($request);
+```
+
+
 ### Use Repository / Entity helpers
 
 ```php
-$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
+$repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
 $results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5);
 foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
     echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 }
+
+# create new salesOrder
+$salesOrder = new \Rebel\BCApi2\Entity([
+    'customerNumber' => 'CU-0123',
+    'externalDocumentNumber' => 'TEST/123',
+    'salesOrderLines' => [
+        [
+            "sequence" => 10000,
+            "lineType" => "Item",
+            "lineObjectNumber" => "1900-A",
+            "quantity" => 5
+        ],
+        [
+            "sequence" => 20000,
+            "lineType" => "Item",
+            "lineObjectNumber" => "1928-S",
+            "quantity" => 20
+        ],
+    ],
+]);
+
+$repository->create($salesOrder);
+echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 ```
 
 ### Generate Entity models for your API
 ```php
-$apiRoute = '/mycompany/myapi/v1.0';
+# fetch Metadata from BC...
+$metadata = new Rebel\BCApi2\Client(
+    accessToken: $token->getToken(),
+    environment: 'sandbox',
+    apiRoute: '/mycompany/myapi/v1.5'
+)->getMetadata();
 
-# fetch Metadata from the server
-$contents = $client->fetchMetadata($apiRoute);
+# ... or from the local file
+$metadata = Rebel\BCApi2\Metadata\Factory::fromString(file_get_contents('files/metadata.xml'));
 
-# or from the local file
-$contents = file_get_contents('files/metadata.xml');
-
-$metadata = Rebel\BCApi2\Metadata\Factory::fromString($contents);
-$generator = new Rebel\BCApi2\Entity\Generator($metadata, $apiRoute, 'app/Models/', 'App\\Models\\');
-$generator->generateAll(true);
+# then generate the files
+$generator = new Rebel\BCApi2\Entity\Generator($metadata, namespacePrefix: 'App\\Models\\');
+$generator->saveAllFilesTo('app/Models', overwrite: true);
 ```
 
 # Tests

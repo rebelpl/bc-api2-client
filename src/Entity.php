@@ -29,7 +29,7 @@ class Entity
 
     protected function getClassnameFor(string $property): string
     {
-        return $this->classMap[ $property ] ?? static::class;
+        return $this->classMap[ $property ] ?? self::class;
     }
 
     public function getETag(): ?string

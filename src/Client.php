@@ -125,8 +125,11 @@ class Client
      */
     public function getCompanies(): array
     {
-        $repository = new Repository($this, 'companies', Company::class, false);
-        return $repository->findAll();
+        return new Repository($this,
+            entitySetName: 'companies',
+            entityClass: Company::class,
+            isCompanyResource: false)
+            ->findAll();
     }
 
     /**
@@ -135,8 +138,11 @@ class Client
      */
     public function getApiRoutes(): array
     {
-        $repository = new Repository($this, 'apicategoryroutes', ApiRoute::class, false);
-        return $repository->findAll();
+        return new Repository($this,
+            entitySetName: 'apicategoryroutes',
+            entityClass: ApiRoute::class,
+            isCompanyResource: false)
+            ->findAll();
     }
 
     /**
@@ -151,7 +157,7 @@ class Client
     /**
      * @throws Exception
      */
-    public function fetchMetadata(string $apiRoute = 'v2.0'): string
+    public function fetchMetadata(): string
     {
         $response = $this->get('$metadata');
         if ($response->getStatusCode() !== self::HTTP_OK) {

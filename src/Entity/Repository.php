@@ -116,14 +116,14 @@ readonly class Repository
         $entity->setETag(null);
     }
 
-    public function save(Entity $entity): void
+    public function save(Entity $entity, array $expand = []): void
     {
         $entity->getETag()
-            ? $this->update($entity)
-            : $this->create($entity);
+            ? $this->update($entity, $expand)
+            : $this->create($entity, $expand);
     }
 
-    public function create(Entity $entity): void
+    public function create(Entity $entity, array $expand = []): void
     {
         if (!empty($entity->getETag())) {
             throw new \InvalidArgumentException('Record already persisted.');
@@ -131,7 +131,7 @@ readonly class Repository
 
         $data = $entity->toUpdate();
         $request = new Request('POST',
-            new Request\UriBuilder($this->entitySetName),
+            new Request\UriBuilder($this->entitySetName)->expand($expand),
             body: json_encode($data));
 
         $response = $this->client->call($request);
@@ -145,7 +145,7 @@ readonly class Repository
         $entity->loadData($data);
     }
 
-    public function update(Entity $entity): void
+    public function update(Entity $entity, array $expand = []): void
     {
         if (empty($entity->getETag())) {
             throw new \InvalidArgumentException('Record not yet persisted.');
@@ -157,7 +157,7 @@ readonly class Repository
         }
 
         $request = new Request('PATCH',
-            new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey()),
+            new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey())->expand($expand),
             body: json_encode($data),
             etag: $entity->getETag());
 
@@ -172,7 +172,7 @@ readonly class Repository
         $entity->loadData($data);
     }
 
-    public function batch(array $entities): void
+    public function batch(array $entities, array $expand = []): void
     {
         $requests = [];
         foreach ($entities as $key => $entity) {
@@ -183,13 +183,13 @@ readonly class Repository
 
             if ($entity->getETag()) {
                 $requests[ $key ] = new Request('PATCH',
-                    new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey()),
+                    new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey())->expand($expand),
                     body: json_encode($data),
                     etag: $entity->getETag());
             }
             else {
                 $requests[ $key ] = new Request('POST',
-                    new Request\UriBuilder($this->entitySetName),
+                    new Request\UriBuilder($this->entitySetName)->expand($expand),
                     body: json_encode($data));
             }
         }

@@ -7,7 +7,6 @@ include_once 'vendor/autoload.php';
 
 $filename = 'tests/files/metadata.xml';
 $metadata = Metadata\Factory::fromString(file_get_contents($filename));
-$generator = new Entity\Generator($metadata);
 
-$files = $generator->generateAllFiles();
-$generator->saveFilesTo($files,'build/', true);
+$generator = new Entity\Generator($metadata);
+$generator->saveAllFilesTo('build/', true);
