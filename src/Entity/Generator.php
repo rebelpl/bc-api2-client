@@ -22,14 +22,11 @@ readonly class Generator
     ];
 
     private string $namespacePrefix;
-    private string $apiRoute;
 
     public function __construct(
         private Metadata $metadata,
-        string           $apiRoute = 'v2.0',
         string           $namespacePrefix = 'Rebel\\BCApi2\\Entity\\')
     {
-        $this->apiRoute = trim($apiRoute, '/');
         $this->namespacePrefix = rtrim($namespacePrefix, '\\') . '\\';
     }
 
@@ -289,7 +286,7 @@ readonly class Generator
             ->setReadOnly();
 
         $constructor = $class->addMethod('__construct')
-            ->setBody("parent::__construct(\$client, '{$entitySet->getName()}', '{$this->apiRoute}', Record::class);");
+            ->setBody("parent::__construct(\$client, entitySetName: '{$entitySet->getName()}', entityClass: Record::class);");
 
         $constructor->addParameter('client')
             ->setType(Client::class);
