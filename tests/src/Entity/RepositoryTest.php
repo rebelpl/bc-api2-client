@@ -7,6 +7,7 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\RequestInterface;
 use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 use Rebel\BCApi2\Entity\Repository;
@@ -39,6 +40,12 @@ class RepositoryTest extends TestCase
         );
     }
 
+    private function getLastRequest(): RequestInterface
+    {
+        $transaction = end($this->historyContainer);
+        return $transaction['request'];
+    }
+
     public function testEntityClassDoesNotExist()
     {
         $this->expectException(Exception::class);
@@ -51,9 +58,14 @@ class RepositoryTest extends TestCase
         $this->assertEquals(Entity::class, $repository->getEntityClass());
     }
 
+    public function testGetBaseUrl()
+    {
+        $repository = new Repository($this->client, 'salesInvoices');
+        $this->assertEquals('companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
+    }
+
     public function testGetSalesOrders()
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
@@ -61,13 +73,13 @@ class RepositoryTest extends TestCase
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals('https://api.businesscentral.dynamics.com/v2.0/test-env/api/'.
                 'foo/bar/v1.5/companies(test-company-id)/salesOrders'.
                 '?%24top=3'.
                 '&%24skip=2'.
                 '&%24expand=salesOrderLines%2Ccustomer',
-            (string)$transaction['request']->getUri());
+            (string)$lastRequest->getUri());
 
         foreach ($result as $salesOrder) {
             $this->assertInstanceOf(Entity::class, $salesOrder);

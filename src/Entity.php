@@ -4,7 +4,6 @@ namespace Rebel\BCApi2;
 use Rebel\BCApi2\Entity\Collection;
 use Carbon\Carbon;
 
-
 class Entity
 {
     const string ODATA_ETAG = '@odata.etag';
@@ -13,18 +12,32 @@ class Entity
     protected array $original = [];
     protected string $primaryKey = 'id';
     protected array $classMap = [];
+    protected array $expanded = [];
 
     public ?string $etag {
         get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
-        set => $this->set(Entity::ODATA_ETAG, $value);
     }
 
     public readonly ?string $context;
 
-    public function __construct(protected array $data = [], ?string $context = null)
+    public function __construct(protected array $data = [], array $expanded = [], ?string $context = null)
     {
+        foreach ($expanded as $name) {
+            $this->expanded[ $name ] = null;
+        }
+
         $this->loadData($data);
         $this->context = $context;
+    }
+
+    public function getExpandedProperties(): array
+    {
+        return array_keys($this->expanded);
+    }
+
+    public function isExpandedProperty(string $property): bool
+    {
+        return array_key_exists($property, $this->expanded);
     }
 
     protected function getClassnameFor(string $property): string
@@ -52,38 +65,52 @@ class Entity
     public function loadData(array $data): void
     {
         foreach ($data as $property => $value) {
-            if (is_array($value)) {
-                $this->data[ $property ] = $this->hydrate($property, $value);
-            }
-            else {
-                if ($property === self::ODATA_ETAG) {
-                    $this->original = $data;
-                }
+            $this->set($property, $value);
+        }
 
-                $this->set($property, $value);
-            }
+        if (!empty($this->data[ Entity::ODATA_ETAG ])) {
+            $this->original = $this->data;
         }
     }
 
-    private function hydrate(string $property, array $value): mixed
+    private function hydrate(string $property, mixed $value): mixed
     {
+        if (is_null($value)) {
+            return null;
+        }
+
+        if ($value instanceof Collection || $value instanceof Entity) {
+            return $value;
+        }
+
         $className = $this->getClassnameFor($property);
         if (!array_is_list($value)) {
             return new $className($value);
         }
 
-        $collection = new Collection();
-        foreach ($value as $item) {
-            $collection->append(new $className($item));
-        }
-
-        return $collection;
+        return new Collection(array_map(function ($item) use ($className) {
+            return new $className($item);
+        }, $value));
     }
 
     public function get(string $property, ?string $cast = null): mixed
     {
+        if ($this->isExpandedProperty($property)) {
+            if ($cast === 'collection') {
+                return $this->getAsCollection($property);
+            }
+
+            return $this->expanded[ $property ];
+        }
+
+        if (!isset($this->data[ $property ])) {
+            isset($this->classMap[ $property ])
+                ? throw new Exception('Property "' . $property . '" is not expanded.')
+                : throw new Exception('Property "' . $property . '" does not exist.');
+        }
+
         $value = $this->data[ $property ];
-        if (is_null($value)) {
+        if (is_null($value) || $value === '00000000-0000-0000-0000-000000000000') {
             return null;
         }
 
@@ -98,9 +125,14 @@ class Entity
         return $value;
     }
 
+    public function getAsCollection(string $property): Collection
+    {
+        return $this->expanded[ $property ] ?? $this->expanded[ $property ] = new Collection();
+    }
+
     public function getAsEnum(string $property, string $enumClass): mixed
     {
-        $value = $this->data[ $property ];
+        $value = $this->data[ $property ] ?? null;
         if (is_null($value)) {
             return null;
         }
@@ -123,46 +155,51 @@ class Entity
         return $this->getAsDateTime($property);
     }
 
-    public function set($property, mixed $value = null, ?string $cast = null): self
+    public function set($property, mixed $value = null, ?string $cast = null): void
     {
         if (is_array($property)) {
             foreach ($property as $key => $value) {
                 $this->set($key, $value);
             }
 
-            return $this;
+            return;
+        }
+
+        if ($this->isExpandedProperty($property)) {
+            $this->expanded[ $property ] = $this->hydrate($property, $value);
+            return;
         }
 
         if (is_null($value)) {
             $this->data[ $property ] = null;
-            return $this;
+            return;
         }
 
         if ($value instanceof \DateTime) {
-            return $cast === 'date'
+            $cast === 'date'
                 ? $this->setAsDate($property, $value)
                 : $this->setAsDateTime($property, $value);
+            return;
         }
 
         if ($value instanceof \BackedEnum) {
             $this->data[ $property ] = $value->value;
-            return $this;
+            return;
         }
 
         if ($value instanceof \UnitEnum) {
             $this->data[ $property ] = $value->name;
-            return $this;
+            return;
         }
 
         $this->data[ $property ] = $value;
-        return $this;
     }
 
-    public function setAsDateTime(string $property, ?\DateTime $value): self
+    public function setAsDateTime(string $property, ?\DateTime $value): void
     {
         if (is_null($value)) {
             $this->data[ $property ] = null;
-            return $this;
+            return;
         }
 
         if (!$value instanceof Carbon) {
@@ -170,14 +207,13 @@ class Entity
         }
 
         $this->data[ $property ] = $value->toIso8601ZuluString();
-        return $this;
     }
 
-    public function setAsDate(string $property, ?\DateTime $value): self
+    public function setAsDate(string $property, ?\DateTime $value): void
     {
         if (is_null($value)) {
             $this->data[ $property ] = null;
-            return $this;
+            return;
         }
 
         if (!$value instanceof Carbon) {
@@ -185,47 +221,40 @@ class Entity
         }
 
         $this->data[ $property ] = $value->toDateString();
-        return $this;
     }
 
-    public function toUpdate(): array
+    public function toUpdate(bool $includeExpandedProperties = false): array
     {
-        $result = [];
+        $changes = array_filter($this->data, function ($key) {
+            return $this->data[ $key ] !== ($this->original[ $key ] ?? null);
+        }, ARRAY_FILTER_USE_KEY);
 
-        foreach ($this->data as $key => $value) {
-            // Skip OData metadata fields
-            if ($key === self::ODATA_ETAG || $key === self::ODATA_CONTEXT) {
-                continue;
-            }
-
-            // If the property is a nested entity, recursively process it
-            if ($value instanceof Entity) {
-                $nestedData = $value->toUpdate();
-                if (!empty($nestedData)) {
-                    $result[ $key ] = $nestedData;
-                }
-            }
-            // If the property is a collection of entities, recursively process each entity
-            elseif ($value instanceof Collection) {
-                $collectionData = [];
-                foreach ($value as $entity) {
-                    if ($entity instanceof Entity) {
-                        $entityData = $entity->toUpdate();
-                        if (!empty($entityData)) {
-                            $collectionData[] = $entityData;
+        if ($includeExpandedProperties) {
+            foreach ($this->expanded as $key => $value) {
+                if ($value instanceof \Traversable) {
+                    $collectionChanges = [];
+                    foreach ($value as $entity) {
+                        if ($entity instanceof Entity) {
+                            $entityChanges = $entity->toUpdate();
+                            if (!empty($entityChanges)) {
+                                $collectionChanges[] = $entityChanges;
+                            }
                         }
                     }
+
+                    if (!empty($collectionChanges)) {
+                        $changes[ $key ] = $collectionChanges;
+                    }
                 }
-                if (!empty($collectionData)) {
-                    $result[ $key ] = $collectionData;
+                elseif ($value instanceof Entity) {
+                    $entityChanges = $value->toUpdate();
+                    if (!empty($entityChanges)) {
+                        $changes[ $key ] = $entityChanges;
+                    }
                 }
-            }
-            // For non-entity properties, include them if they've changed
-            elseif (!isset($this->original[ $key ]) || $this->data[ $key ] !== $this->original[ $key ]) {
-                $result[ $key ] = $value;
             }
         }
 
-        return $result;
+        return $changes;
     }
 }

@@ -40,6 +40,12 @@ class ClientTest extends TestCase
         );
     }
 
+    private function getLastRequest(): RequestInterface
+    {
+        $transaction = end($this->historyContainer);
+        return $transaction['request'];
+    }
+
     public function testGetBaseUrl()
     {
         $baseUrl = $this->client->getBaseUrl();
@@ -66,110 +72,90 @@ class ClientTest extends TestCase
 
     public function testCall()
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(Client::HTTP_OK));
-
         $request = new Request('GET', 'companies(xxxx)/salesOrders?$top=5');
         $this->client->call($request);
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/' .
             'foo/bar/v1.5/companies(xxxx)/salesOrders?$top=5',
-            (string)$transaction['request']->getUri());
+            (string)$lastRequest->getUri());
     }
 
     public function testGet(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(Client::HTTP_OK));
-
         $this->client->get('/test');
 
-        /** @var array{'request': Request, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/test',
-            (string)$transaction['request']->getUri());
-        $this->assertEquals('GET', $transaction['request']->getMethod());
-        $this->assertEmpty((string)$transaction['request']->getBody());
+            (string)$lastRequest->getUri());
+        $this->assertEquals('GET', $lastRequest->getMethod());
+        $this->assertEmpty((string)$lastRequest->getBody());
     }
 
     public function testPost(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(Client::HTTP_CREATED));
-
         $this->client->post('test(123)', json_encode([
             'name' => 'Test Name',
         ]));
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/test(123)',
-            (string)$transaction['request']->getUri());
-        $this->assertEquals('POST', $transaction['request']->getMethod());
-        $this->assertStringContainsString('Test Name', (string)$transaction['request']->getBody());
-        $this->assertEmpty($transaction['request']->getHeaderLine(Request::HEADER_ETAG));
+            (string)$lastRequest->getUri());
+        $this->assertEquals('POST', $lastRequest->getMethod());
+        $this->assertStringContainsString('Test Name', (string)$lastRequest->getBody());
+        $this->assertEmpty($lastRequest->getHeaderLine(Request::HEADER_ETAG));
     }
 
     public function testPatch(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(Client::HTTP_OK));
-
         $this->client->patch('test(123)', json_encode([
             'name' => 'New Test',
         ]), 'test-etag');
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/test(123)',
-            (string)$transaction['request']->getUri());
-        $this->assertEquals('PATCH', $transaction['request']->getMethod());
-        $this->assertNotEmpty((string)$transaction['request']->getBody());
-        $this->assertEquals('test-etag', $transaction['request']->getHeaderLine(Client::HEADER_IFMATCH));
+            (string)$lastRequest->getUri());
+        $this->assertEquals('PATCH', $lastRequest->getMethod());
+        $this->assertNotEmpty((string)$lastRequest->getBody());
+        $this->assertEquals('test-etag', $lastRequest->getHeaderLine(Client::HEADER_IFMATCH));
     }
 
     public function testDelete(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(Client::HTTP_NO_CONTENT));
-
         $this->client->delete('test(123)', 'test-etag');
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/test(123)',
-            (string)$transaction['request']->getUri());
-        $this->assertEquals('DELETE', $transaction['request']->getMethod());
-        $this->assertEmpty((string)$transaction['request']->getBody());
-        $this->assertEquals('test-etag', $transaction['request']->getHeaderLine(Client::HEADER_IFMATCH));
+            (string)$lastRequest->getUri());
+        $this->assertEquals('DELETE', $lastRequest->getMethod());
+        $this->assertEmpty((string)$lastRequest->getBody());
+        $this->assertEquals('test-etag', $lastRequest->getHeaderLine(Client::HEADER_IFMATCH));
     }
 
     public function testFetchMetadata(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(200, []));
-
         $this->client->fetchMetadata();
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/$metadata',
-            (string)$transaction['request']->getUri());
+            (string)$lastRequest->getUri());
     }
 
     public function testGetCompanies(): void
     {
-        $this->mockResponse->reset();
         $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/companies.json')));
-
         $companies = $this->client->getCompanies();
         foreach ($companies as $company) {
             $this->assertInstanceOf(Company::class, $company);
@@ -183,10 +169,9 @@ class ClientTest extends TestCase
             $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->systemCreatedAt);
         }
 
-        /** @var array{'request': RequestInterface, 'response': Response} $transaction */
-        $transaction = end($this->historyContainer);
+        $lastRequest = $this->getLastRequest();
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/companies',
-            (string)$transaction['request']->getUri());
+            (string)$lastRequest->getUri());
     }
 }

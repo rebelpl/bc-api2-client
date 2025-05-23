@@ -201,28 +201,17 @@ readonly class Generator
             else {
                 $class->addMember(
                     $this->generateRecordProperty($name, $this->namespacePrefix . $targetEntityName, false)
-                        ->addComment("@var ?{$targetEntityName}")
                 );
             }
 
             $classMap[ $name ] = $targetEntityName;
         }
 
-        $list = '';
-        foreach ($classMap as $key => $value) {
-            $list .= "\t'{$key}' => {$value}::class,\n";
+        if (!empty($classMap)) {
+            $class->addProperty('classMap', array_map(function ($value) { return new PhpGenerator\Literal($value . '::class'); }, $classMap))
+                ->setType('array')
+                ->setProtected();
         }
-
-        $constructor = $class->addMethod('__construct')
-            ->setBody("parent::__construct(\$data, \$context);\n\n")
-            ->addBody("\$this->classMap = [\n{$list}];");
-
-        $constructor->addParameter('data', [])
-            ->setType('array');
-
-        $constructor->addParameter('context', null)
-            ->setType('string')
-            ->setNullable();
 
         return $class;
     }
@@ -243,7 +232,7 @@ readonly class Generator
 
             $property->addHook('get', "\$this->getAsEnum('{$name}', Enums\\{$enumName}::class)");
             if ($isUpdateable) {
-                $property->addHook('set', "\$this->set('{$name}', \$value)");
+                $property->addHook('set')->setBody("\$this->set('{$name}', \$value);");
             }
 
             return $property;
@@ -254,11 +243,18 @@ readonly class Generator
             $property->setType(Carbon::class);
             $property->addHook('get', "\$this->getAsDateTime('{$name}')");
             if ($isUpdateable) {
-                $property->addHook('set', $property->getType() === 'Edm.Date'
-                    ? "\$this->setAsDate('{$name}', \$value)"
-                    : "\$this->setAsDateTime('{$name}', \$value)");
+                $property->addHook('set')->setBody($property->getType() === 'Edm.Date'
+                    ? "\$this->setAsDate('{$name}', \$value);"
+                    : "\$this->setAsDateTime('{$name}', \$value);");
             }
 
+            return $property;
+        }
+
+        // collection
+        if ($type === Entity\Collection::class) {
+            $property->setType($type);
+            $property->addHook('get', "\$this->get('{$name}', 'collection')");
             return $property;
         }
 
@@ -266,7 +262,8 @@ readonly class Generator
         $property->setType($type);
         $property->addHook('get', "\$this->get('{$name}')");
         if ($isUpdateable) {
-            $property->addHook('set', "\$this->set('{$name}', \$value)");
+            $property->addHook('set')
+                ->setBody("\$this->set('{$name}', \$value);");
         }
 
         return $property;

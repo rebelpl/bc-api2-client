@@ -13,7 +13,7 @@ readonly class Repository
 
     public function __construct(
         protected Client $client,
-        protected string $entitySetName,
+        string $entitySetName,
         protected string $entityClass = Entity::class,
         bool             $isCompanyResource = true)
     {
@@ -22,13 +22,18 @@ readonly class Repository
         }
 
         $this->baseUrl = $isCompanyResource
-            ? $this->client->getCompanyPath() . '/' . $this->entitySetName
-            : $this->entitySetName;
+            ? $this->client->getCompanyPath() . '/' . $entitySetName
+            : $entitySetName;
     }
 
     public function getEntityClass(): string
     {
         return $this->entityClass;
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
     }
 
     /**
@@ -40,7 +45,7 @@ readonly class Repository
         return $this->findBy([], $orderBy);
     }
 
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expand = []): array
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expands = []): array
     {
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl)
@@ -48,7 +53,7 @@ readonly class Repository
                 ->orderBy($orderBy)
                 ->top($size)
                 ->skip($skip)
-                ->expand($expand));
+                ->expand($expands));
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_OK) {
@@ -60,17 +65,17 @@ readonly class Repository
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = $this->hydrate($result, $data[ Entity::ODATA_CONTEXT ]);
+            $entities[] = $this->hydrate($result, $expands, $data[ Entity::ODATA_CONTEXT ]);
         }
 
         return $entities;
     }
 
-    public function get(string $primaryKey, array $expand = []): ?Entity
+    public function get(string $primaryKey, array $expands = []): ?Entity
     {
         $request = new Request('GET',
-            new Request\UriBuilder($this->entitySetName, $primaryKey)
-                ->expand($expand));
+            new Request\UriBuilder($this->baseUrl, $primaryKey)
+                ->expand($expands));
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
@@ -84,12 +89,12 @@ readonly class Repository
         }
 
         $data = json_decode($response->getBody(), true);
-        return $this->hydrate($data);
+        return $this->hydrate($data, $expands);
     }
 
-    public function find(string $primaryKey, array $expand = []): ?Entity
+    public function find(string $primaryKey, array $expands = []): ?Entity
     {
-        return $this->get($primaryKey, $expand);
+        return $this->get($primaryKey, $expands);
     }
 
     public function delete(Entity $entity): void
@@ -103,7 +108,7 @@ readonly class Repository
         }
 
         $request = new Request('DELETE',
-            new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey()),
+            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey()),
             etag: $entity->getETag());
 
         $response = $this->client->call($request);
@@ -116,22 +121,23 @@ readonly class Repository
         $entity->setETag(null);
     }
 
-    public function save(Entity $entity, array $expand = []): void
+    public function save(Entity $entity): void
     {
         $entity->getETag()
-            ? $this->update($entity, $expand)
-            : $this->create($entity, $expand);
+            ? $this->update($entity)
+            : $this->create($entity);
     }
 
-    public function create(Entity $entity, array $expand = []): void
+    public function create(Entity $entity): void
     {
         if (!empty($entity->getETag())) {
             throw new \InvalidArgumentException('Record already persisted.');
         }
 
-        $data = $entity->toUpdate();
+        $data = $entity->toUpdate(true);
         $request = new Request('POST',
-            new Request\UriBuilder($this->entitySetName)->expand($expand),
+            new Request\UriBuilder($this->baseUrl)
+                ->expand($entity->getExpandedProperties()),
             body: json_encode($data));
 
         $response = $this->client->call($request);
@@ -145,7 +151,7 @@ readonly class Repository
         $entity->loadData($data);
     }
 
-    public function update(Entity $entity, array $expand = []): void
+    public function update(Entity $entity): void
     {
         if (empty($entity->getETag())) {
             throw new \InvalidArgumentException('Record not yet persisted.');
@@ -157,7 +163,8 @@ readonly class Repository
         }
 
         $request = new Request('PATCH',
-            new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey())->expand($expand),
+            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+                ->expand($entity->getExpandedProperties()),
             body: json_encode($data),
             etag: $entity->getETag());
 
@@ -172,7 +179,7 @@ readonly class Repository
         $entity->loadData($data);
     }
 
-    public function batch(array $entities, array $expand = []): void
+    public function batchUpdate(array $entities): void
     {
         $requests = [];
         foreach ($entities as $key => $entity) {
@@ -183,13 +190,15 @@ readonly class Repository
 
             if ($entity->getETag()) {
                 $requests[ $key ] = new Request('PATCH',
-                    new Request\UriBuilder($this->entitySetName, $entity->getPrimaryKey())->expand($expand),
+                    new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+                        ->expand($entity->getExpands()),
                     body: json_encode($data),
                     etag: $entity->getETag());
             }
             else {
                 $requests[ $key ] = new Request('POST',
-                    new Request\UriBuilder($this->entitySetName)->expand($expand),
+                    new Request\UriBuilder($this->baseUrl)
+                        ->expand($entity->getExpands()),
                     body: json_encode($data));
             }
         }
@@ -213,8 +222,8 @@ readonly class Repository
         }
     }
 
-    private function hydrate(array $data, ?string $context = null): Entity
+    private function hydrate(array $data, array $expands = [], ?string $context = null): Entity
     {
-        return new $this->entityClass($data, $context);
+        return new $this->entityClass($data, $expands, $context);
     }
 }

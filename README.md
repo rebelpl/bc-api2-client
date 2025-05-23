@@ -100,6 +100,37 @@ $repository->create($salesOrder);
 echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 ```
 
+### Working with SalesOrder and SalesOrderLines
+
+Business Central does not support deep update and mixed insert/update operations. The SalesOrder\Repository class provides a custom save() method that handles this limitation by:
+
+1. Using batchUpdate() to save the salesOrderLines
+2. Refreshing the salesOrder object to get the current ETag
+3. Updating the salesOrder without including the salesOrderLines in the update data
+
+```php
+// Create a SalesOrder repository
+$repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
+
+// Find a sales order by ID
+$salesOrder = $repository->find('SO/123');
+
+// Update properties of the sales order
+$salesOrder->externalDocumentNumber = 'TEST';
+
+// Update existing line
+$salesOrder->salesOrderLines[0]->quantity = 10;
+
+// Create new line
+$salesOrder->salesOrderLines->append(new Rebel\BCApi2\Entity\SalesOrderLine\Record([
+    'itemId' => '12345',
+    'quantity' => 5
+]));
+
+// Save all changes in one operation
+$repository->save($salesOrder);
+```
+
 ### Generate Entity models for your API
 ```php
 # fetch Metadata from BC...
