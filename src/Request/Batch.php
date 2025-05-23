@@ -1,27 +1,37 @@
 <?php
 namespace Rebel\BCApi2\Request;
 
+use Rebel\BCApi2\Exception;
 use Rebel\BCApi2\Request;
 
 class Batch
 {
     /**
-     * @param Request[] $requests
+     * @param array<string, Request> $requests
      */
     public function __construct(
         private array $requests = [])
     {
     }
 
-    public function add(Request $request): self
+    public function add(string $key, Request $request): self
     {
-        $this->requests[] = $request;
+        if (isset($this->requests[ $key ])) {
+            throw new Exception("Request '{$key}' already exists in the batch.");
+        }
+
+        $this->requests[ $key ] = $request;
         return $this;
+    }
+
+    public function count(): int
+    {
+        return count($this->requests);
     }
 
     public function toArray(): array
     {
-        return array_map(function (Request $request, mixed $key) {
+        return array_map(function (Request $request, string $key) {
             return [
                 'method' => $request->getMethod(),
                 'url' => (string)$request->getUri(),
