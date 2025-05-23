@@ -113,6 +113,12 @@ class UriBuilder
         return $this;
     }
 
+    public function include(string $includePart): self
+    {
+        $this->includePart = trim($includePart, '/');
+        return $this;
+    }
+
     public function buildUri(): string
     {
         $uri = $this->resourceUrl;
