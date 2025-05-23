@@ -40,7 +40,7 @@ class Batch
             return [
                 'method' => $request->getMethod(),
                 'url' => (string)$request->getUri(),
-                'headers' => $request->getHeaders(),
+                'headers' => $request->getHeaderLines(),
                 'body' => $request->getBody(),
                 'id' => (string)$key,
             ];
@@ -49,7 +49,7 @@ class Batch
 
     public function toJson(): string
     {
-        return json_encode([ 'requests' => $this->toArray()], JSON_PRETTY_PRINT);
+        return json_encode([ 'requests' => $this->toArray() ], JSON_PRETTY_PRINT);
     }
 
     public function getRequest(): Request

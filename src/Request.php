@@ -14,12 +14,19 @@ class Request extends Psr7\Request
         ?string $body = null,
         ?string $etag = null)
     {
-        parent::__construct($method, $resource, [
+        parent::__construct($method, $resource, array_filter([
             self::HEADER_ETAG => $etag,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ], $body);
+        ]), $body);
         $this->id = $id ?? uniqid();
+    }
+
+    public function getHeaderLines(): array
+    {
+        return array_map(function ($value) {
+            return implode(', ', $value);
+        }, $this->getHeaders());
     }
 
     public function toArray(): array
