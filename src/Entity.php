@@ -233,11 +233,11 @@ class Entity
             foreach ($this->expanded as $key => $value) {
                 if ($value instanceof \Traversable) {
                     $collectionChanges = [];
-                    foreach ($value as $entity) {
+                    foreach ($value as $i => $entity) {
                         if ($entity instanceof Entity) {
                             $entityChanges = $entity->toUpdate();
                             if (!empty($entityChanges)) {
-                                $collectionChanges[] = $entityChanges;
+                                $collectionChanges[ $i ] = $entityChanges;
                             }
                         }
                     }
