@@ -24,6 +24,11 @@ class Batch
         return $this;
     }
 
+    public function empty(): bool
+    {
+        return empty($this->requests);
+    }
+
     public function count(): int
     {
         return count($this->requests);
