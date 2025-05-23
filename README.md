@@ -69,7 +69,7 @@ $response = $client->call($request);
 
 ```php
 $repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
-$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5);
+$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5, expanded: [ 'salesOrderLines' ]);
 foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
@@ -94,26 +94,24 @@ $salesOrder = new \Rebel\BCApi2\Entity([
             "quantity" => 20
         ],
     ],
-]);
+], expanded: [ 'salesOrderLines' ]);
 
 $repository->create($salesOrder);
 echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 ```
 
-### Working with SalesOrder and SalesOrderLines
+### Working with nested properties
 
-Business Central does not support deep update and mixed insert/update operations. The SalesOrder\Repository class provides a custom save() method that handles this limitation by:
-
-1. Using batchUpdate() to save the salesOrderLines
-2. Refreshing the salesOrder object to get the current ETag
-3. Updating the salesOrder without including the salesOrderLines in the update data
+Business Central does not support deep update and mixed insert/update operations.
+The Entity\Repository class provides a custom save() method that handles this limitation
+by using batchUpdate() to create / update the nested properties.
 
 ```php
 // Create a SalesOrder repository
 $repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
 
-// Find a sales order by ID
-$salesOrder = $repository->find('SO/123');
+// Get a sales order by ID
+$salesOrder = $repository->get('abc-123', expanded: [ 'salesOrderLines' ]);
 
 // Update properties of the sales order
 $salesOrder->externalDocumentNumber = 'TEST';
@@ -121,11 +119,11 @@ $salesOrder->externalDocumentNumber = 'TEST';
 // Update existing line
 $salesOrder->salesOrderLines[0]->quantity = 10;
 
-// Create new line
-$salesOrder->salesOrderLines->append(new Rebel\BCApi2\Entity\SalesOrderLine\Record([
+// Add new line
+$salesOrder->salesOrderLines[] = new Rebel\BCApi2\Entity\SalesOrderLine\Record([
     'itemId' => '12345',
     'quantity' => 5
-]));
+]);
 
 // Save all changes in one operation
 $repository->save($salesOrder);

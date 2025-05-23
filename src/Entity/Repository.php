@@ -45,7 +45,7 @@ readonly class Repository
         return $this->findBy([], $orderBy);
     }
 
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expands = []): array
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
     {
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl)
@@ -53,7 +53,7 @@ readonly class Repository
                 ->orderBy($orderBy)
                 ->top($size)
                 ->skip($skip)
-                ->expand($expands));
+                ->expand($expanded));
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_OK) {
@@ -65,17 +65,17 @@ readonly class Repository
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = $this->hydrate($result, $expands, $data[ Entity::ODATA_CONTEXT ]);
+            $entities[] = $this->hydrate($result, $expanded, $data[ Entity::ODATA_CONTEXT ]);
         }
 
         return $entities;
     }
 
-    public function get(string $primaryKey, array $expands = []): ?Entity
+    public function get(string $primaryKey, array $expanded = []): ?Entity
     {
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl, $primaryKey)
-                ->expand($expands));
+                ->expand($expanded));
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
@@ -89,12 +89,12 @@ readonly class Repository
         }
 
         $data = json_decode($response->getBody(), true);
-        return $this->hydrate($data, $expands);
+        return $this->hydrate($data, $expanded);
     }
 
-    public function find(string $primaryKey, array $expands = []): ?Entity
+    public function find(string $primaryKey, array $expanded = []): ?Entity
     {
-        return $this->get($primaryKey, $expands);
+        return $this->get($primaryKey, $expanded);
     }
 
     public function delete(Entity $entity): void
@@ -183,22 +183,24 @@ readonly class Repository
     {
         $requests = [];
         foreach ($entities as $key => $entity) {
-            $data = $entity->toUpdate();
+            $data = $entity->toUpdate(true);
             if (empty($data)) {
                 continue;
             }
 
             if ($entity->getETag()) {
+                // TODO: update expanded entities after the regular update
+                //       then refresh to get current version
                 $requests[ $key ] = new Request('PATCH',
                     new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
-                        ->expand($entity->getExpands()),
+                        ->expand($entity->getExpandedProperties()),
                     body: json_encode($data),
                     etag: $entity->getETag());
             }
             else {
                 $requests[ $key ] = new Request('POST',
                     new Request\UriBuilder($this->baseUrl)
-                        ->expand($entity->getExpands()),
+                        ->expand($entity->getExpandedProperties()),
                     body: json_encode($data));
             }
         }
@@ -222,8 +224,8 @@ readonly class Repository
         }
     }
 
-    private function hydrate(array $data, array $expands = [], ?string $context = null): Entity
+    private function hydrate(array $data, array $expanded = [], ?string $context = null): Entity
     {
-        return new $this->entityClass($data, $expands, $context);
+        return new $this->entityClass($data, $expanded, $context);
     }
 }
