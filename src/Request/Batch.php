@@ -37,13 +37,13 @@ class Batch
     public function toArray(): array
     {
         return array_map(function (Request $request, string $key) {
-            return [
+            return array_filter([
                 'method' => $request->getMethod(),
                 'url' => (string)$request->getUri(),
                 'headers' => $request->getHeaderLines(),
-                'body' => $request->getBody(),
+                'body' => json_decode($request->getBody()->getContents()),
                 'id' => (string)$key,
-            ];
+            ], fn($value) => !is_null($value));
         }, $this->requests, array_keys($this->requests));
     }
 
