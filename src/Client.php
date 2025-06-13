@@ -112,7 +112,7 @@ class Client
 
     public function call(Request $request): ?Psr7\Response
     {
-        echo $this->buildUri($request->getUri()) . "\n";
+        # echo $this->buildUri($request->getUri()) . "\n";
         $request = $request
             ->withUri($this->buildUri($request->getUri()))
             ->withHeader('Authorization', 'Bearer ' . $this->accessToken);
