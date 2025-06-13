@@ -30,6 +30,11 @@ class Entity
         $this->context = $context;
     }
 
+    public function hasExpandedProperties(): bool
+    {
+        return !empty($this->expanded);
+    }
+
     public function getExpandedProperties(): array
     {
         return array_keys($this->expanded);
@@ -57,9 +62,14 @@ class Entity
         $this->data[ Entity::ODATA_ETAG ] = $value;
     }
 
+    public function setPrimaryKey(?string $value): void
+    {
+        $this->data[ $this->primaryKey ] = $value;
+    }
+
     public function getPrimaryKey(): ?string
     {
-        return $this->get($this->primaryKey);
+        return $this->data[ $this->primaryKey ] ?? null;
     }
 
     public function loadData(array $data): void
