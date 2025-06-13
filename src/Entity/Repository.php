@@ -7,10 +7,16 @@ use Rebel\BCApi2\Exception;
 use Rebel\BCApi2\Request;
 use Rebel\BCApi2\Request\Batch;
 
+/**
+ * @template T of Entity
+ */
 readonly class Repository
 {
     private string $baseUrl;
 
+    /**
+     * @param class-string<T> $entityClass
+     */
     public function __construct(
         protected Client $client,
         string $entitySetName,
@@ -37,14 +43,16 @@ readonly class Repository
     }
 
     /**
-     * @return Entity[]
-     * @throws Exception
+     * @return T[]
      */
     public function findAll($orderBy = null): array
     {
         return $this->findBy([], $orderBy);
     }
 
+    /**
+     * @return T[]
+     */
     public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
     {
         $request = new Request('GET',
@@ -57,9 +65,7 @@ readonly class Repository
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $entities = [];
@@ -71,6 +77,9 @@ readonly class Repository
         return $entities;
     }
 
+    /**
+     * @return T
+     */
     public function get(string $primaryKey, array $expanded = []): ?Entity
     {
         $request = new Request('GET',
@@ -83,20 +92,24 @@ readonly class Repository
         }
 
         if ($response->getStatusCode() !== Client::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $data = json_decode($response->getBody(), true);
         return $this->hydrate($data, $expanded);
     }
 
+    /**
+     * @return T
+     */
     public function find(string $primaryKey, array $expanded = []): ?Entity
     {
         return $this->get($primaryKey, $expanded);
     }
 
+    /**
+     * @param T $entity
+     */
     public function delete(Entity $entity): void
     {
         if (empty($entity->getETag())) {
@@ -107,15 +120,10 @@ readonly class Repository
             throw new \InvalidArgumentException('Record PrimaryKey is missing (entity not yet persisted?).');
         }
 
-        $request = new Request('DELETE',
-            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey()),
-            etag: $entity->getETag());
-
+        $request = Request\Factory::deleteEntity($this->baseUrl, $entity);
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_NO_CONTENT) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $entity->setETag(null);
@@ -135,16 +143,11 @@ readonly class Repository
         }
 
         $data = $entity->toUpdate(true);
-        $request = new Request('POST',
-            new Request\UriBuilder($this->baseUrl)
-                ->expand($entity->getExpandedProperties()),
-            body: json_encode($data));
+        $request = Request\Factory::createEntity($this->baseUrl, $entity, $data);
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_CREATED) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $data = json_decode($response->getBody(), true);
@@ -157,64 +160,59 @@ readonly class Repository
             throw new \InvalidArgumentException('Record not yet persisted.');
         }
 
-        $data = $entity->toUpdate();
+        $data = $entity->toUpdate(true);
         if (empty($data)) {
             return;
         }
 
-        $request = new Request('PATCH',
-            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
-                ->expand($entity->getExpandedProperties()),
-            body: json_encode($data),
-            etag: $entity->getETag());
+        $request = Request\Factory::updateEntity($this->baseUrl, $entity, $data);
+        # echo $request->getBody()->getContents(); exit();
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $data = json_decode($response->getBody(), true);
-        $entity->loadData($data);
+        if (!isset($data['responses'])) {
+            $entity->loadData($data);
+            return;
+        }
+
+        foreach ($data['responses'] as $response) {
+            $body = $response['body'];
+            if (!empty($body['error'])) {
+                throw new Exception(
+                    $body['error']['message'],
+                    $body['error']['code']);
+            }
+
+            if ($response['id'] === '$read') {
+                $entity->loadData($body);
+            }
+        }
     }
 
-    public function batchUpdate(array $entities): void
+    public function batchSave(array $entities): void
     {
-        $requests = [];
+        $batch = new Batch();
         foreach ($entities as $key => $entity) {
-            $data = $entity->toUpdate(true);
+            $data = $entity->toUpdate();
             if (empty($data)) {
                 continue;
             }
 
-            if ($entity->getETag()) {
-                // TODO: update expanded entities after the regular update
-                //       then refresh to get current version
-                $requests[ $key ] = new Request('PATCH',
-                    new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
-                        ->expand($entity->getExpandedProperties()),
-                    body: json_encode($data),
-                    etag: $entity->getETag());
-            }
-            else {
-                $requests[ $key ] = new Request('POST',
-                    new Request\UriBuilder($this->baseUrl)
-                        ->expand($entity->getExpandedProperties()),
-                    body: json_encode($data));
-            }
+            $request = Request\Factory::saveEntity($this->baseUrl, $entity, $data);
+            $batch->add($key, $request);
         }
 
-        if (empty($requests)) {
+        if ($batch->empty()) {
             return;
         }
 
-        $batch = new Batch($requests);
         $response = $this->client->call($batch->getRequest());
         if ($response->getStatusCode() !== Client::HTTP_OK) {
-            throw new Exception(
-                $response->getBody(),
-                $response->getStatusCode());
+            throw new Exception\InvalidResponseException($response);
         }
 
         $data = json_decode($response->getBody(), true);
