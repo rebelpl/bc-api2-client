@@ -6,4 +6,5 @@ composer.lock
 composer.phar
 .phpunit.result.cache
 bin/test.php
-/src/Entity/
+src/Entity/
+tests/config.php

@@ -16,7 +16,7 @@ composer require rebelpl/bc-api2-common
 ## Usage
 
 ### Setup
-To use the client, you need to obtain a valid Access Token.
+To use the client, you need a valid Access Token.
 Use an OAuth client to obtain it (for example [rebelpl/oauth2-businesscentral](https://github.com/rebelpl/oauth2-businesscentral)).
 
 ```php
@@ -36,6 +36,25 @@ $client = new Rebel\BCApi2\Client(
     environment: 'sandbox',
     companyId: '123456',
 );
+```
+
+or use Client\Factory helper
+```php
+$client = Rebel\BCApi2\Client\Factory::useClientCredentials(
+    tenantId: 'mydomain.com',
+    clientId: 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
+    clientSecret: '*************************',
+    environment: 'sandbox',
+    companyId: '123456');
+
+$client = Rebel\BCApi2\Client\Factory::useAuthorizationCode(
+    tenantId: 'mydomain.com',
+    clientId: 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
+    clientSecret: '*************************',
+    environment: 'sandbox',
+    redirectUri: 'https://localhost',
+    companyId: '123456',
+    tokenFilename: 'tmp/token.json');
 ```
 
 ### Get Companies
