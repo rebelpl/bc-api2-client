@@ -1,49 +1,31 @@
 <?php
 namespace Rebel\BCApi2\Client;
 
+use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Token;
 use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Exception;
-use Rebel\OAuth2\Client\Provider;
-use League\OAuth2\Client\Token;
 
 class Factory
 {
     public static function useClientCredentials(
-        string $tenantId,
-        string $clientId,
-        string $clientSecret,
+        AbstractProvider $provider,
         string $environment,
         ?string $companyId = null): Client
     {
-        $provider = new Provider\BusinessCentral([
-            'tenantId' => $tenantId,
-            'clientId' => $clientId,
-            'clientSecret' => $clientSecret,
-        ]);
-
         $token = $provider->getAccessToken('client_credentials', [
-            'scope' => Provider\BusinessCentral::CLIENT_CREDENTIALS_SCOPE
+            'scope' => 'https://api.businesscentral.dynamics.com/.default'
         ]);
 
         return new Client($token->getToken(), environment: $environment, companyId: $companyId);
     }
 
     public static function useAuthorizationCode(
-        string $tenantId,
-        string $clientId,
-        string $clientSecret,
+        AbstractProvider $provider,
         string $environment,
-        string $redirectUri,
         ?string $companyId = null,
         ?string $tokenFilename = null): Client
     {
-        $provider = new Provider\BusinessCentral([
-            'tenantId' => $tenantId,
-            'clientId' => $clientId,
-            'clientSecret' => $clientSecret,
-            'redirectUri' => $redirectUri,
-        ]);
-
         // load existing tokens from storage (refresh if expired)
         if ($tokenFilename && file_exists($tokenFilename)) {
             $token = new Token\AccessToken(json_decode(file_get_contents($tokenFilename), true));
@@ -80,7 +62,7 @@ class Factory
         return php_sapi_name() === 'cli';
     }
 
-    private static function cliAuthorizationCode(Provider\BusinessCentral $provider): string
+    private static function cliAuthorizationCode(AbstractProvider $provider): string
     {
         echo "Open this URL in your browser:\n";
         echo $provider->getAuthorizationUrl() . "\n\n";
@@ -89,7 +71,7 @@ class Factory
         return trim(fgets(STDIN));
     }
 
-    private static function httpAuthorizationCode(Provider\BusinessCentral $provider): string
+    private static function httpAuthorizationCode(AbstractProvider $provider): string
     {
         // Handle OAuth error message
         if (isset($_GET['error'])) {

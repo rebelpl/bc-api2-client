@@ -16,43 +16,44 @@ composer require rebelpl/bc-api2-common
 ## Usage
 
 ### Setup
-To use the client, you need a valid Access Token.
-Use an OAuth client to obtain it (for example [rebelpl/oauth2-businesscentral](https://github.com/rebelpl/oauth2-businesscentral)).
+To use the client, you need OAuth authentication flow to be set up for your app:
+https://github.com/rebelpl/oauth2-businesscentral?tab=readme-ov-file#pre-requisites.
+
+### Create client
+To create a client, you need a valid Access Token. You can use an OAuth library to obtain it, then:
 
 ```php
-$provider = new Rebel\OAuth2\Client\Provider\BusinessCentral([
-    // Required
-    'tenantId'                  => 'mydomain.com',
-    'clientId'                  => 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
-    'clientSecret'              => '*************************',
-]);
-
-$token = $provider->getAccessToken('client_credentials', [
-    'scope' => Rebel\OAuth2\Client\Provider\BusinessCentral::CLIENT_CREDENTIALS_SCOPE
-]);
-
 $client = new Rebel\BCApi2\Client(
-    accessToken: $token->getToken(),
+    accessToken: $accessToken,
     environment: 'sandbox',
     companyId: '123456',
 );
 ```
 
-or use Client\Factory helper
+or use `Client\Factory` helper (requires [`rebelpl/oauth2-businesscentral`](https://github.com/rebelpl/oauth2-businesscentral)
+or any other implementation of `League\OAuth2\Client\Provider\AbstractProvider`):
 ```php
+// service-to-service
 $client = Rebel\BCApi2\Client\Factory::useClientCredentials(
-    tenantId: 'mydomain.com',
-    clientId: 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
-    clientSecret: '*************************',
+    new Rebel\OAuth2\Client\Provider\BusinessCentral([
+        'tenantId' => 'mydomain.com',
+        'clientId' => 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
+        'clientSecret' => '*************************',
+    ]),
     environment: 'sandbox',
     companyId: '123456');
+```
 
+```php
+// login-as
 $client = Rebel\BCApi2\Client\Factory::useAuthorizationCode(
-    tenantId: 'mydomain.com',
-    clientId: 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
-    clientSecret: '*************************',
+    new Rebel\OAuth2\Client\Provider\BusinessCentral([
+        'tenantId' => 'mydomain.com',
+        'clientId' => 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
+        'clientSecret' => '*************************',
+        'redirectUri' => 'https://localhost',
+    ]),
     environment: 'sandbox',
-    redirectUri: 'https://localhost',
     companyId: '123456',
     tokenFilename: 'tmp/token.json');
 ```
