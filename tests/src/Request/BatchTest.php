@@ -27,8 +27,10 @@ class BatchTest extends TestCase
         ));
 
         $array = $batch->toArray();
-        foreach ($array as $key => $value) {
-            $this->assertEquals($key, $value['id']);
+        $this->assertCount(2, $array);
+
+        foreach ($array as $request) {
+            $this->assertContains($request['id'], [ 'o1', 'o2' ]);
         }
     }
 }

@@ -100,7 +100,7 @@ class EntityTest extends TestCase
         $salesOrderLine->set('description', 'Modified Description');
 
         // Add new salesOrderLine
-        $salesOrderLines[] = new Entity\SalesOrderLine\Record([
+        $salesOrderLines[] = new Entity([
             'description' => 'New Line Description',
             'quantity' => 10,
         ]);
