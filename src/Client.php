@@ -17,6 +17,8 @@ class Client
         HTTP_CREATED = 201,
         HTTP_NO_CONTENT = 204,
         HTTP_NOT_FOUND = 404;
+    
+    const string DEFAULT_API_ROUTE = 'v2.0';
 
     const string HEADER_IFMATCH = 'If-Match';
     protected ClientInterface $client;
@@ -33,14 +35,14 @@ class Client
     public function __construct(
         private readonly string  $accessToken,
         string  $environment,
-        string $apiRoute = 'v2.0',
+        ?string $apiRoute = null,
         private readonly ?string $companyId = null,
         array                    $options = [])
     {
         $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
         $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
             . "/{$environment}/api/";
-        $this->apiRoute = trim($apiRoute, '/');
+        $this->apiRoute = trim($apiRoute ?: self::DEFAULT_API_ROUTE, '/');
 
         $this->defaultHeaders = [
             'Content-Type' => 'application/json',

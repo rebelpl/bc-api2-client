@@ -11,18 +11,20 @@ class Factory
     public static function useClientCredentials(
         AbstractProvider $provider,
         string $environment,
+        ?string $apiRoute = null,
         ?string $companyId = null): Client
     {
         $token = $provider->getAccessToken('client_credentials', [
             'scope' => 'https://api.businesscentral.dynamics.com/.default'
         ]);
 
-        return new Client($token->getToken(), environment: $environment, companyId: $companyId);
+        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
     }
 
     public static function useAuthorizationCode(
         AbstractProvider $provider,
         string $environment,
+        ?string $apiRoute = null,
         ?string $companyId = null,
         ?string $tokenFilename = null): Client
     {
@@ -35,7 +37,7 @@ class Factory
                 ]);
 
                 file_put_contents($tokenFilename, json_encode($token->jsonSerialize(), JSON_PRETTY_PRINT));
-                return new Client($token->getToken(), environment: $environment, companyId: $companyId);
+                return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
             }
         }
 
@@ -54,7 +56,7 @@ class Factory
             file_put_contents($tokenFilename, json_encode($token->jsonSerialize(), JSON_PRETTY_PRINT));
         }
 
-        return new Client($token->getToken(), environment: $environment, companyId: $companyId);
+        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
    }
 
     private static function isCommandLineInterface(): bool

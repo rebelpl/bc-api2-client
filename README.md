@@ -149,6 +149,14 @@ $salesOrder->salesOrderLines[] = new Rebel\BCApi2\Entity\SalesOrderLine\Record([
 $repository->save($salesOrder);
 ```
 
+## Download metadata for your API
+```shell
+curl -X GET "https://api.businesscentral.dynamics.com/v2.0/<environment>/api/<api_publisher>/<api_group>/<api_version>/$metadata" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Accept: application/xml" \
+  -o files/metadata.xml
+```
+
 ### Generate Entity models for your API
 ```php
 # fetch Metadata from BC...
