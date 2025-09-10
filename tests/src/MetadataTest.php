@@ -58,6 +58,10 @@ class MetadataTest extends TestCase
             'inventoryPostingGroupId' => 'id',
         ], $navigationProperty->getReferences());
         $this->assertEquals('Microsoft.NAV.inventoryPostingGroup', $navigationProperty->getType());
+
+        $entityType = $this->metadata->getEntityType('salesOrder', false);
+        $property = $entityType->getProperty('orderDate');
+        $this->assertEquals('Edm.Date', $property->getType());
     }
 
     public function testEntitySetCapabilities()

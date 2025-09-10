@@ -160,7 +160,7 @@ readonly class Generator
         return $imports;
     }
 
-    protected function generateRecordFor(EntityType $entityType, bool $isUpdateable): PhpGenerator\ClassType
+    public function generateRecordFor(EntityType $entityType, bool $isUpdateable): PhpGenerator\ClassType
     {
         $className = 'Record';
         $class = new PhpGenerator\ClassType($className)
@@ -174,7 +174,7 @@ readonly class Generator
 
             $type = $this->matchPropertTypeToPhpType($property->getType());
             $class->addMember(
-                $this->generateRecordProperty($name, $type, $isUpdateable)
+                $this->generateRecordProperty($name, $type, $property->getType(), $isUpdateable)
             );
         }
 
@@ -194,13 +194,13 @@ readonly class Generator
             $targetEntityName = ucfirst($targetEntity->getName()) . '\\Record';
             if ($property->isCollection()) {
                 $class->addMember(
-                    $this->generateRecordProperty($name, Entity\Collection::class, false)
+                    $this->generateRecordProperty($name, Entity\Collection::class, $property->getType(), false)
                         ->addComment("@var ?Entity\\Collection<{$targetEntityName}>")
                 );
             }
             else {
                 $class->addMember(
-                    $this->generateRecordProperty($name, $this->namespacePrefix . $targetEntityName, false)
+                    $this->generateRecordProperty($name, $this->namespacePrefix . $targetEntityName, $property->getType(), false)
                 );
             }
 
@@ -216,7 +216,7 @@ readonly class Generator
         return $class;
     }
 
-    protected function generateRecordProperty(string $name, string $type, bool $isUpdateable): PhpGenerator\Property
+    protected function generateRecordProperty(string $name, string $phpType, string $propertyType, bool $isUpdateable): PhpGenerator\Property
     {
         // id is always read-only
         if ($name === 'id') {
@@ -226,8 +226,8 @@ readonly class Generator
         $property = new PhpGenerator\Property($name)->setNullable();
 
         // enum type
-        if (str_starts_with($type, $this->metadata->getNamespace())) {
-            $enumName = ucfirst(substr($type, strlen($this->metadata->getNamespace()) + 1));
+        if (str_starts_with($phpType, $this->metadata->getNamespace())) {
+            $enumName = ucfirst(substr($phpType, strlen($this->metadata->getNamespace()) + 1));
             $property->setType($this->namespacePrefix . 'Enums\\' . $enumName);
 
             $property->addHook('get', "\$this->getAsEnum('{$name}', Enums\\{$enumName}::class)");
@@ -239,11 +239,11 @@ readonly class Generator
         }
 
         // datetime types
-        if ($type === \DateTime::class) {
+        if ($phpType === \DateTime::class) {
             $property->setType(Carbon::class);
             $property->addHook('get', "\$this->getAsDateTime('{$name}')");
             if ($isUpdateable) {
-                $property->addHook('set')->setBody($property->getType() === 'Edm.Date'
+                $property->addHook('set')->setBody($propertyType === 'Edm.Date'
                     ? "\$this->setAsDate('{$name}', \$value);"
                     : "\$this->setAsDateTime('{$name}', \$value);");
             }
@@ -252,14 +252,14 @@ readonly class Generator
         }
 
         // collection
-        if ($type === Entity\Collection::class) {
-            $property->setType($type);
+        if ($phpType === Entity\Collection::class) {
+            $property->setType($phpType);
             $property->addHook('get', "\$this->get('{$name}', 'collection')");
             return $property;
         }
 
         // default
-        $property->setType($type);
+        $property->setType($phpType);
         $property->addHook('get', "\$this->get('{$name}')");
         if ($isUpdateable) {
             $property->addHook('set')
