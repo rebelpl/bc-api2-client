@@ -89,7 +89,7 @@ $response = $client->call($request);
 
 ```php
 $repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
-$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', 5, expanded: [ 'salesOrderLines' ]);
+$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', size: 5, expanded: [ 'salesOrderLines' ]);
 foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties

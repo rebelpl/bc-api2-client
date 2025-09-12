@@ -69,7 +69,7 @@ class RepositoryTest extends TestCase
         $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], null, 3, 2, [ 'salesOrderLines', 'customer' ]);
+        $result = $repository->findBy([], size: 3, skip: 2, expanded: [ 'salesOrderLines', 'customer' ]);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
