@@ -224,6 +224,6 @@ readonly class Repository
 
     private function hydrate(array $data, array $expanded = [], ?string $context = null): Entity
     {
-        return new $this->entityClass($data, $expanded, $context);
+        return new $this->entityClass($data, array_is_list($expanded) ? $expanded : array_keys($expanded), $context);
     }
 }

@@ -2,6 +2,7 @@
 namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
+use Nette\Utils\ArrayHash;
 
 class UriBuilder
 {
@@ -34,13 +35,28 @@ class UriBuilder
     {
         if (!empty($properties)) {
             $this->queryOptions['$expand'] = is_array($properties)
-                ? join(',', $properties)
+                ? $this->expandStringFromArray($properties)
                 : (string)$properties;
         }
 
         return $this;
     }
+    
+    private function expandStringFromArray(array $array): string
+    {
+        if (array_is_list($array)) {
+            return join(',', $array);
+        }
 
+        // todo: $top, $skip, etc.
+        $expand = [];
+        foreach ($array as $key => $value) {
+            $expand[] = $key . '($filter=' . $this->filterStringFromCriteria($value) . ')';
+        }
+        
+        return join(',', $expand);
+    }
+    
     public function top(?int $top): self
     {
         $this->queryOptions['$top'] = $top;
@@ -49,24 +65,28 @@ class UriBuilder
 
     public function where(array $criteria): self
     {
-        $map = array_map(function ($key, $value) {
-            if ($value instanceof Expression) {
-                return $value;
-            }
-
-            if (is_array($value)) {
-                return new Expression($value[0], $value[1], $value[2]);
-            }
-
-            if (is_int($key)) {
-                return $value;
-            }
-
-            return new Expression($key, '=', $value);
-        }, array_keys($criteria), $criteria);
-
-        $filter = join(' ' . Expression::AND . ' ', $map);
+        $filter = $this->filterStringFromCriteria($criteria);
         return $this->filter($filter);
+    }
+    
+    private function filterStringFromCriteria(array $criteria): string
+    {
+        return join(' ' . Expression::AND . ' ',
+            array_map(function ($key, $value) {
+                if ($value instanceof Expression) {
+                    return $value;
+                }
+    
+                if (is_array($value)) {
+                    return new Expression($value[0], $value[1], $value[2]);
+                }
+    
+                if (is_int($key)) {
+                    return $value;
+                }
+    
+                return new Expression($key, '=', $value);
+        }, array_keys($criteria), $criteria));
     }
 
     public function filter(string $filter): self

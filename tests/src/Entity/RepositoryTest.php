@@ -32,8 +32,8 @@ class RepositoryTest extends TestCase
         $this->client = new Client(
             accessToken: 'test-token',
             environment: 'test-env',
-            apiRoute:    'foo/bar/v1.5',
-            companyId:   'test-company-id',
+            apiRoute: 'foo/bar/v1.5',
+            companyId: 'test-company-id',
             options: [
                 'handler' => $stack,
             ]
@@ -66,20 +66,23 @@ class RepositoryTest extends TestCase
 
     public function testGetSalesOrders()
     {
-        $this->mockResponse->append(new Response(200, [], file_get_contents('tests/files/salesOrders.json')));
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], size: 3, skip: 2, expanded: [ 'salesOrderLines', 'customer' ]);
+        $result = $repository->findBy([], size: 3, skip: 2, expanded: ['salesOrderLines', 'customer']);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
         $lastRequest = $this->getLastRequest();
-        $this->assertEquals('https://api.businesscentral.dynamics.com/v2.0/test-env/api/'.
-                'foo/bar/v1.5/companies(test-company-id)/salesOrders'.
-                '?%24top=3'.
-                '&%24skip=2'.
-                '&%24expand=salesOrderLines%2Ccustomer',
-            (string)$lastRequest->getUri());
+        $this->assertEquals('/v2.0/test-env/api/' .
+            'foo/bar/v1.5/companies(test-company-id)/salesOrders',
+            $lastRequest->getUri()->getPath());
+
+        $this->assertEquals('$top=3' .
+            '&$skip=2' .
+            '&$expand=salesOrderLines,customer',
+            urldecode($lastRequest->getUri()->getQuery()));
 
         foreach ($result as $salesOrder) {
             $this->assertInstanceOf(Entity::class, $salesOrder);
@@ -100,5 +103,32 @@ class RepositoryTest extends TestCase
             $this->assertInstanceOf(Entity::class, $customer);
             $this->assertNotEmpty($customer->get('displayName'));
         }
+    }
+
+    public function testCustomersWithFilteredShipToAddresses(): void
+    {
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/customers.json')));
+
+        $repository = new Repository($this->client, 'customers');
+        $result = $repository->findBy([ 'gln' => '12345' ], expanded: [
+            'shipToAddresses' => [ 'code' => '196238' ],
+        ]);
+        
+        $this->assertCount(1, $result);
+        $this->assertCount(1, $this->historyContainer);
+
+        $lastRequest = $this->getLastRequest();
+        $this->assertEquals('$filter=gln eq \'12345\'' .
+            '&$expand=shipToAddresses($filter=code eq \'196238\')',
+            urldecode($lastRequest->getUri()->getQuery()));
+
+        $customer = $result[0];
+        $this->assertInstanceOf(Entity::class, $customer);
+        
+        $addresses = $customer->get('shipToAddresses');
+        $this->assertCount(1, $addresses);
+        $this->assertInstanceOf(Entity::class, $addresses[0]);
+        $this->assertEquals('196238', $addresses[0]->get('code'));
     }
 }

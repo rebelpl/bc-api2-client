@@ -1,0 +1,33 @@
+{
+  "@odata.context": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/$metadata#companies(a7f1d29f-b084-f011-a708-6045bd956d8a)/customers",
+  "value": [
+    {
+      "@odata.etag": "W/\"JzIwOzE1MzU5NDg3NDg1Mzg4ODM2MjUzMTswMDsn\"",
+      "no": "TEST",
+      "id": "f8fbb2d5-f683-f011-a6f5-000d3a4b6d9d",
+      "gln": "12345",
+      "name": "Test S.A.",
+      "address": "Test Street",
+      "postCode": "00-001",
+      "city": "Warszawa",
+      "countryRegionCode": "PL",
+      "vatRegistrationNo": "PL123456789",
+      "salespersonCode": "PAWJEL",
+      "shipToAddresses": [
+        {
+          "@odata.etag": "W/\"JzE5Ozk5MjA5NDM0NTI0NjAzNjE1OTMxOzAwOyc=\"",
+          "customerNo": "TEST",
+          "code": "196238",
+          "id": "4177a0af-1884-f011-a6f5-000d3a4b6d9d",
+          "gln": "67890",
+          "name": "Warehouse B",
+          "address": "Elm Street",
+          "address2": "",
+          "postCode": "00-666",
+          "city": "Springwood",
+          "countryRegionCode": "US"
+        }
+      ]
+    }
+  ]
+}

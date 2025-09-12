@@ -88,6 +88,7 @@ $response = $client->call($request);
 ### Use Repository / Entity helpers
 
 ```php
+# find sales orders based on given criteria
 $repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
 $results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', size: 5, expanded: [ 'salesOrderLines' ]);
 foreach ($results as $salesOrder) {
@@ -118,9 +119,15 @@ $salesOrder = new \Rebel\BCApi2\Entity([
 
 $repository->create($salesOrder);
 echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
+
+# filter sales orders and sales lines at the same time
+$results = $repository->findBy([ 'sellToCountry' => 'PL' ], top: 10, expanded: [ 
+    'salesOrderLines' => [ 'lineType' => 'Item', 'quantity gt 5' ],
+]);
+echo count($results) . " sales orders found, only lines with quantity > 5 included.\n";
 ```
 
-### Working with nested properties
+### Working with expandedproperties
 
 Business Central does not support deep update and mixed insert/update operations.
 The Entity\Repository class provides a custom save() method that handles this limitation
