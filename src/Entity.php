@@ -23,6 +23,10 @@ class Entity
     public function __construct(protected array $data = [], array $expanded = [], ?string $context = null)
     {
         foreach ($expanded as $name) {
+            if ($name instanceof \UnitEnum) {
+                $name = $name->name;
+            }
+            
             $this->expanded[ $name ] = null;
         }
 
