@@ -90,7 +90,10 @@ $response = $client->call($request);
 ```php
 # find sales orders based on given criteria
 $repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
-$results = $repository->findBy([ 'customerNumber' => 'CU-0123' ], 'orderDate DESC', size: 5, expanded: [ 'salesOrderLines' ]);
+$results = $repository->findBy([
+    'customerNumber' => [ 'CU-TEST', 'CU-0123' ]
+    'customerPriceGroup' => 'GOLD'
+], 'orderDate DESC', size: 5, expanded: [ 'salesOrderLines' ]);
 foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
@@ -98,8 +101,8 @@ foreach ($results as $salesOrder) {
 }
 
 # create new salesOrder
-$salesOrder = new \Rebel\BCApi2\Entity([
-    'customerNumber' => 'CU-0123',
+$salesOrder = new Rebel\BCApi2\Entity([
+    Rebel\BCApi2\Request\Expression::equals('customerNumber', 'CU-0123')
     'externalDocumentNumber' => 'TEST/123',
     'salesOrderLines' => [
         [
@@ -121,8 +124,8 @@ $repository->create($salesOrder);
 echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
 
 # filter sales orders and sales lines at the same time
-$results = $repository->findBy([ 'sellToCountry' => 'PL' ], top: 10, expanded: [ 
-    'salesOrderLines' => [ 'lineType' => 'Item', 'quantity gt 5' ],
+$results = $repository->findBy([ 'sellToCountry' => ['PL', 'UK'] ], top: 10, expanded: [ 
+    'salesOrderLines' => [ 'lineType' => 'Item', Rebel\BCApi2\Request\Expression::greaterThan('quantity', 5) ],
 ]);
 echo count($results) . " sales orders found, only lines with quantity > 5 included.\n";
 ```

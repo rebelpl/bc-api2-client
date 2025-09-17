@@ -14,17 +14,18 @@ readonly class Expression
     const string
         EQ = 'eq',  // Equal to
         NE = 'ne',  // Not equal to
+        IN = 'in',  // In
+        NI = 'ni',  // Not in
         GT = 'gt',  // Greater than
         GE = 'ge',  // Greater than or equal to
-        LT = 'lt',  // Less than
-        LE = 'le';  // Less than or equal to
+        LT = 'lt',  // Lesser than
+        LE = 'le';  // Lesser than or equal to
 
     // String functions
     const string
         CONTAINS = 'contains',     // Contains a substring
         STARTSWITH = 'startswith', // Starts with a substring
         ENDSWITH = 'endswith';     // Ends with a substring
-
 
     // Logical operators
     const string
@@ -69,8 +70,15 @@ readonly class Expression
 
     public function __toString(): string
     {
-        $encodedValue = $this->encodeODataValue($this->value);
-        return $this->field . ' ' . $this->operator . ' ' . $encodedValue;
+        if (is_array($this->value)) {
+            return match ($this->operator) {
+                self::IN => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
+                self::NI => '(' . self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)) . ')',
+                default => throw new \Exception("Array values can be only used with 'in' and 'ni' operators."),
+            };
+        }
+        
+        return join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]);
     }
 
     public function encodeODataValue(mixed $value): string {
@@ -97,5 +105,45 @@ readonly class Expression
             // Fallback for other types (e.g., arrays or objects)
             return "'" . addslashes((string) $value) . "'";
         }
+    }
+
+    public static function in(string $field, array $values): Expression
+    {
+        return new Expression($field, self::IN, $values);
+    }
+
+    public static function notIn(string $field, array $values): Expression
+    {
+        return new Expression($field, self::IN, $values);
+    }
+
+    public static function equals(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::EQ, $value);
+    }
+
+    public static function notEquals(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::NE, $value);
+    }
+
+    public static function greaterThan(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::GT, $value);
+    }
+    
+    public static function lesserThan(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::GT, $value);
+    }
+
+    public static function and(array $expressions): string
+    {
+        return join(' ' . self::AND . ' ', $expressions);
+    }
+
+    public static function or(array $expressions): string
+    {
+        return '(' . join(' ' . self::OR . ' ', $expressions) . ')';
     }
 }

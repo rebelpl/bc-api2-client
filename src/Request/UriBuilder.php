@@ -71,21 +71,20 @@ class UriBuilder
     
     private function filterStringFromCriteria(array $criteria): string
     {
-        return join(' ' . Expression::AND . ' ',
-            array_map(function ($key, $value) {
-                if ($value instanceof Expression) {
-                    return $value;
-                }
-    
-                if (is_array($value)) {
-                    return new Expression($value[0], $value[1], $value[2]);
-                }
-    
-                if (is_int($key)) {
-                    return $value;
-                }
-    
-                return new Expression($key, '=', $value);
+        return Expression::and(array_map(function ($key, $value) {
+            if ($value instanceof Expression) {
+                return $value;
+            }
+
+            if (is_array($value)) {
+                return new Expression($value[0], $value[1], $value[2]);
+            }
+
+            if (is_int($key)) {
+                return $value;
+            }
+
+            return new Expression($key, '=', $value);
         }, array_keys($criteria), $criteria));
     }
 

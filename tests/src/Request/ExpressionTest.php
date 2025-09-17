@@ -27,5 +27,18 @@ class ExpressionTest extends TestCase
 
         $expression = new Expression('pricesIncludeTax', Expression::EQ, true);
         $this->assertEquals("pricesIncludeTax eq true", (string)$expression);
+
+        $expression = Expression::and([
+            Expression::or([
+                new Expression('a', 'eq',  'b'),
+                new Expression('a', 'eq',  'c')
+            ]),
+            Expression::equals('foo', 'bar'),
+        ]); 
+            ;
+        $this->assertEquals("(a eq 'b' or a eq 'c') and foo eq 'bar'", $expression);
+
+        $expression = Expression::in('customerNo', [ 'CU-TEST', 'CU-ANOTHER' ]);
+        $this->assertEquals("(customerNo eq 'CU-TEST' or customerNo eq 'CU-ANOTHER')", (string)$expression);
     }
 }
