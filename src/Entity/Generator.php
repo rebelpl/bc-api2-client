@@ -168,7 +168,7 @@ readonly class Generator
 
         $properties = $entityType->getProperties();
         foreach ($properties as $name => $property) {
-            if (str_ends_with($name, 'Filter')) {
+            if (str_ends_with($name, 'Filter') or str_ends_with($name, Metadata::FILTER_SUFFIX)) {
                 continue;
             }
 

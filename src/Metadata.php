@@ -3,6 +3,7 @@ namespace Rebel\BCApi2;
 
 class Metadata
 {
+    const string FILTER_SUFFIX = '_FilterOnly';
     private string $namespace;
 
     /** @var array<string, Metadata\EntitySet> */
