@@ -76,15 +76,15 @@ class UriBuilder
                 return $value;
             }
 
-            if (is_array($value)) {
-                return new Expression($value[0], $value[1], $value[2]);
-            }
-
             if (is_int($key)) {
                 return $value;
             }
 
-            return new Expression($key, '=', $value);
+            if (is_array($value)) {
+                return Expression::in($key, $value);
+            }
+            
+            return Expression::equals($key, $value);
         }, array_keys($criteria), $criteria));
     }
 

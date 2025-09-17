@@ -27,21 +27,21 @@ class UriBuilderTest extends TestCase
             ->skip(3)
             ->count()
             ->where([
-                'type' => 'Inventory',
+                'type' => [ 'Inventory', 'Service' ],
                 new Expression('lastModifiedDateTime', '>', new \DateTime('2021-01-15')),
             ])
             ->orderBy('number', 'desc');
 
         $expected = 'items'
-            .'?%24select=number%2CdisplayName'
-            .'&%24top=5'
-            .'&%24skip=3'
-            .'&%24count=true'
-            .'&%24filter='
-            .'type%20eq%20%27Inventory%27'
-            .'%20and%20'
-            .'lastModifiedDateTime%20gt%202021-01-15T00%3A00%3A00.000Z'
-            .'&%24orderby=number%20desc';
-        $this->assertEquals($expected, (string)$request);
+            .'?$select=number,displayName'
+            .'&$top=5'
+            .'&$skip=3'
+            .'&$count=true'
+            .'&$filter='
+            .'(type eq \'Inventory\' or type eq \'Service\')'
+            .' and '
+            .'lastModifiedDateTime gt 2021-01-15T00:00:00.000Z'
+            .'&$orderby=number desc';
+        $this->assertEquals($expected, urldecode($request));
     }
 }
