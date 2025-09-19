@@ -24,7 +24,7 @@ readonly class Repository
         bool             $isCompanyResource = true)
     {
         if (!class_exists($this->entityClass)) {
-            throw new Exception("Class '{$this->entityClass}' does not exist.");
+            throw new Exception("Class '$this->entityClass' does not exist.");
         }
 
         $this->baseUrl = $isCompanyResource

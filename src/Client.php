@@ -41,25 +41,13 @@ class Client
     {
         $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
         $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
-            . "/{$environment}/api/";
+            . "/$environment/api/";
         $this->apiRoute = trim($apiRoute ?: self::DEFAULT_API_ROUTE, '/');
 
         $this->defaultHeaders = [
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
-    }
-
-    private function initHttpClient(array $options): void
-    {
-        $this->client = new GuzzleHttp\Client(array_merge([
-            'base_uri' => $this->getBaseUrl(),
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ]
-        ], $options));
     }
 
     public function getHttpClient(): ClientInterface
@@ -78,7 +66,7 @@ class Client
             throw new Exception('You cannot call company resources without valid companyId. Run getCompanies() to obtain a list of companies.');
         }
 
-        return "companies({$this->companyId})";
+        return "companies($this->companyId)";
     }
 
     public function buildUri(string $resource): Psr7\Uri

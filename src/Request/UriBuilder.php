@@ -2,7 +2,6 @@
 namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
-use Nette\Utils\ArrayHash;
 
 class UriBuilder
 {

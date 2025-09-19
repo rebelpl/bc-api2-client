@@ -115,9 +115,9 @@ class Entity
         }
 
         if (!isset($this->data[ $property ])) {
-            isset($this->classMap[ $property ])
-                ? throw new Exception('Property "' . $property . '" is not expanded.')
-                : throw new Exception('Property "' . $property . '" does not exist.');
+            throw isset($this->classMap[ $property ])
+                ? new Exception('Property "' . $property . '" is not expanded.')
+                : new Exception('Property "' . $property . '" does not exist.');
         }
 
         $value = $this->data[ $property ];

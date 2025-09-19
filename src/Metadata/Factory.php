@@ -63,7 +63,7 @@ class Factory
 
         // Extract EntitySets
         $entitySets = $xml->xpath('//edm:Schema/edm:EntityContainer/edm:EntitySet');
-        foreach ($entitySets as $i => $entitySet) {
+        foreach ($entitySets as $entitySet) {
             $name = (string)$entitySet['Name'];
             $type = (string)$entitySet['EntityType'];
             $entityType = $metadata->getEntityType($type, true);

@@ -17,7 +17,7 @@ class Batch
     public function add(string $key, Request $request): self
     {
         if (isset($this->requests[ $key ])) {
-            throw new Exception("Request '{$key}' already exists in the batch.");
+            throw new Exception("Request '$key' already exists in the batch.");
         }
 
         $this->requests[ $key ] = $request;

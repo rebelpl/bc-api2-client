@@ -12,13 +12,14 @@ class Factory
         AbstractProvider $provider,
         string $environment,
         ?string $apiRoute = null,
-        ?string $companyId = null): Client
+        ?string $companyId = null,
+        array $options = []): Client
     {
         $token = $provider->getAccessToken('client_credentials', [
             'scope' => 'https://api.businesscentral.dynamics.com/.default'
         ]);
 
-        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
+        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId, options: $options);
     }
 
     public static function useAuthorizationCode(
@@ -26,6 +27,7 @@ class Factory
         string $environment,
         ?string $apiRoute = null,
         ?string $companyId = null,
+        array $options = [],
         ?string $tokenFilename = null): Client
     {
         // load existing tokens from storage (refresh if expired)
@@ -37,7 +39,7 @@ class Factory
                 ]);
 
                 file_put_contents($tokenFilename, json_encode($token->jsonSerialize(), JSON_PRETTY_PRINT));
-                return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
+                return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId, options: $options);
             }
         }
 
@@ -56,7 +58,7 @@ class Factory
             file_put_contents($tokenFilename, json_encode($token->jsonSerialize(), JSON_PRETTY_PRINT));
         }
 
-        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId);
+        return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId, options: $options);
    }
 
     private static function isCommandLineInterface(): bool

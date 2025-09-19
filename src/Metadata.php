@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection ALL */
+
 namespace Rebel\BCApi2;
 
 class Metadata

@@ -108,7 +108,7 @@ readonly class Generator
     {
         $entitySet = $this->metadata->getEntitySet($name) ?? $this->metadata->getEntitySetFor($name);
         if (!$entitySet) {
-            throw new Exception("Entity set '{$name}' not found in metadata.");
+            throw new Exception("Entity set '$name' not found in metadata.");
         }
 
         $files = [];
@@ -150,7 +150,7 @@ readonly class Generator
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
             if (!$targetEntity) {
-                throw new Exception("Entity type '{$targetType}' not found in metadata.");
+                throw new Exception("Entity type '$targetType' not found in metadata.");
             }
 
             $targetEntityName = ucfirst($targetEntity->getName());
@@ -188,14 +188,14 @@ readonly class Generator
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
             if (!$targetEntity) {
-                throw new Exception("Entity type '{$targetType}' not found in metadata.");
+                throw new Exception("Entity type '$targetType' not found in metadata.");
             }
 
             $targetEntityName = ucfirst($targetEntity->getName()) . '\\Record';
             if ($property->isCollection()) {
                 $class->addMember(
                     $this->generateRecordProperty($name, Entity\Collection::class, $property->getType(), false)
-                        ->addComment("@var ?Entity\\Collection<{$targetEntityName}>")
+                        ->addComment("@var ?Entity\\Collection<$targetEntityName>")
                 );
             }
             else {
@@ -230,9 +230,9 @@ readonly class Generator
             $enumName = ucfirst(substr($phpType, strlen($this->metadata->getNamespace()) + 1));
             $property->setType($this->namespacePrefix . 'Enums\\' . $enumName);
 
-            $property->addHook('get', "\$this->getAsEnum('{$name}', Enums\\{$enumName}::class)");
+            $property->addHook('get', "\$this->getAsEnum('$name', Enums\\$enumName::class)");
             if ($isUpdateable) {
-                $property->addHook('set')->setBody("\$this->set('{$name}', \$value);");
+                $property->addHook('set')->setBody("\$this->set('$name', \$value);");
             }
 
             return $property;
@@ -241,11 +241,11 @@ readonly class Generator
         // datetime types
         if ($phpType === \DateTime::class) {
             $property->setType(Carbon::class);
-            $property->addHook('get', "\$this->getAsDateTime('{$name}')");
+            $property->addHook('get', "\$this->getAsDateTime('$name')");
             if ($isUpdateable) {
                 $property->addHook('set')->setBody($propertyType === 'Edm.Date'
-                    ? "\$this->setAsDate('{$name}', \$value);"
-                    : "\$this->setAsDateTime('{$name}', \$value);");
+                    ? "\$this->setAsDate('$name', \$value);"
+                    : "\$this->setAsDateTime('$name', \$value);");
             }
 
             return $property;
@@ -254,16 +254,16 @@ readonly class Generator
         // collection
         if ($phpType === Entity\Collection::class) {
             $property->setType($phpType);
-            $property->addHook('get', "\$this->get('{$name}', 'collection')");
+            $property->addHook('get', "\$this->get('$name', 'collection')");
             return $property;
         }
 
         // default
         $property->setType($phpType);
-        $property->addHook('get', "\$this->get('{$name}')");
+        $property->addHook('get', "\$this->get('$name')");
         if ($isUpdateable) {
             $property->addHook('set')
-                ->setBody("\$this->set('{$name}', \$value);");
+                ->setBody("\$this->set('$name', \$value);");
         }
 
         return $property;
@@ -336,7 +336,7 @@ readonly class Generator
     {
         $enumMembers = $this->metadata->getEnumTypeMembers($name);
         if (is_null($enumMembers)) {
-            throw new Exception("Enum type '{$name}' not found in metadata.");
+            throw new Exception("Enum type '$name' not found in metadata.");
         }
 
         $className = ucfirst($name);

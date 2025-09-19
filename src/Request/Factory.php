@@ -28,7 +28,7 @@ class Factory
 
                         /** @var Entity $target */
                         $target = $property[ $i ] ?? null;
-                        $key = "{$name}/{$i}";
+                        $key = "$name/$i";
 
                         $requests[ $key ] = Request\Factory::saveEntity($targetUrl, $target, $changes);
                     }
