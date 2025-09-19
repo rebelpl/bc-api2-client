@@ -1,15 +1,21 @@
 <?php
 namespace Rebel\BCApi2\Metadata;
 
-readonly class EntitySet
+class EntitySet
 {
     const ODATA_CAPABILITIES = 'Org.OData.Capabilities.V1';
+    private $name;
+    private $entityType;
+    private $capabilities;
 
     public function __construct(
-        private string $name,
-        private EntityType $entityType,
-        private array $capabilities = [])
+        string $name,
+        EntityType $entityType,
+        array $capabilities = [])
     {
+        $this->capabilities = $capabilities;
+        $this->entityType = $entityType;
+        $this->name = $name;
     }
 
     public function getName(): string

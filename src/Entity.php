@@ -6,27 +6,21 @@ use Carbon\Carbon;
 
 class Entity
 {
-    const string ODATA_ETAG = '@odata.etag';
-    const string ODATA_CONTEXT = '@odata.context';
+    const  ODATA_ETAG = '@odata.etag';
+    const  ODATA_CONTEXT = '@odata.context';
 
-    protected array $original = [];
-    protected string $primaryKey = 'id';
-    protected array $classMap = [];
-    protected array $expanded = [];
+    protected $original = [];
+    protected $primaryKey = 'id';
+    protected $classMap = [];
+    protected $expanded = [];
 
-    public ?string $etag {
-        get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
-    }
+    public $context;
+    protected $data = [];
 
-    public readonly ?string $context;
-
-    public function __construct(protected array $data = [], array $expanded = [], ?string $context = null)
+    public function __construct(array $data = [], array $expanded = [], ?string $context = null)
     {
+        $this->data = $data;
         foreach ($expanded as $name) {
-            if ($name instanceof \UnitEnum) {
-                $name = $name->name;
-            }
-            
             $this->expanded[ $name ] = null;
         }
 
@@ -87,7 +81,7 @@ class Entity
         }
     }
 
-    private function hydrate(string $property, mixed $value): mixed
+    private function hydrate(string $property, $value): ?object
     {
         if (is_null($value)) {
             return null;
@@ -98,7 +92,7 @@ class Entity
         }
 
         $className = $this->getClassnameFor($property);
-        if (!array_is_list($value)) {
+        if (!$this->arrayIsList($value)) {
             return new $className($value);
         }
 
@@ -106,8 +100,20 @@ class Entity
             return new $className($item);
         }, $value));
     }
+    
+    private function arrayIsList(array $array): bool
+    {
+        $i = 0;
+        foreach ($array as $key => $value) {
+            if ($key !== $i++) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
 
-    public function get(string $property, ?string $cast = null): mixed
+    public function get(string $property, ?string $cast = null)
     {
         if ($this->isExpandedProperty($property)) {
             if ($cast === 'collection') {
@@ -118,9 +124,9 @@ class Entity
         }
 
         if (!isset($this->data[ $property ])) {
-            isset($this->classMap[ $property ])
-                ? throw new Exception('Property "' . $property . '" is not expanded.')
-                : throw new Exception('Property "' . $property . '" does not exist.');
+            throw isset($this->classMap[ $property ])
+                ? new Exception('Property "' . $property . '" is not expanded.')
+                : new Exception('Property "' . $property . '" does not exist.');
         }
 
         $value = $this->data[ $property ];
@@ -132,9 +138,9 @@ class Entity
             return $this->getAsDateTime($property);
         }
 
-        if (is_a($cast, \BackedEnum::class, true)) {
-            return $this->getAsEnum($property, $cast);
-        }
+//        if (is_a($cast, \BackedEnum::class, true)) {
+//            return $this->getAsEnum($property, $cast);
+//        }
 
         return $value;
     }
@@ -144,7 +150,7 @@ class Entity
         return $this->expanded[ $property ] ?? $this->expanded[ $property ] = new Collection();
     }
 
-    public function getAsEnum(string $property, string $enumClass): mixed
+    public function getAsEnum(string $property, string $enumClass)
     {
         $value = $this->data[ $property ] ?? null;
         if (is_null($value)) {
@@ -169,7 +175,7 @@ class Entity
         return $this->getAsDateTime($property);
     }
 
-    public function set($property, mixed $value = null, ?string $cast = null): void
+    public function set($property, $value = null, ?string $cast = null): void
     {
         if (is_array($property)) {
             foreach ($property as $key => $value) {
@@ -193,16 +199,6 @@ class Entity
             $cast === 'date'
                 ? $this->setAsDate($property, $value)
                 : $this->setAsDateTime($property, $value);
-            return;
-        }
-
-        if ($value instanceof \BackedEnum) {
-            $this->data[ $property ] = $value->value;
-            return;
-        }
-
-        if ($value instanceof \UnitEnum) {
-            $this->data[ $property ] = $value->name;
             return;
         }
 

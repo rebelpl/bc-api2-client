@@ -1,13 +1,20 @@
 <?php
 namespace Rebel\BCApi2\Metadata;
 
-readonly class Property
+class Property
 {
+    private $type;
+    private $nullable;
+    private $maxLength;
+
     public function __construct(
-        private string $type,
-        private bool $nullable = true,
-        private ?int $maxLength = null)
+        string $type,
+        bool $nullable = true,
+        ?int $maxLength = null)
     {
+        $this->maxLength = $maxLength;
+        $this->nullable = $nullable;
+        $this->type = $type;
     }
 
     public function getType(): string

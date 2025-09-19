@@ -7,10 +7,11 @@ use Rebel\BCApi2\Exception;
 
 class EntityTest extends TestCase
 {
-    private Entity $customer;
+    /** @var Entity */
+    private $customer;
 
     /** @var Entity[] */
-    private array $salesOrders = [];
+    private $salesOrders = [];
 
     public function setUp(): void
     {
@@ -39,7 +40,7 @@ class EntityTest extends TestCase
 
     public function testGetETag(): void
     {
-        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->etag);
+        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->getETag());
     }
 
     public function testGetNotExistingProperty(): void

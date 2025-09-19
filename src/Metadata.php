@@ -3,17 +3,19 @@ namespace Rebel\BCApi2;
 
 class Metadata
 {
-    const string FILTER_SUFFIX = '_FilterOnly';
-    private string $namespace;
+    const  FILTER_SUFFIX = '_FilterOnly';
+    
+    /** @var string */
+    private $namespace;
 
     /** @var array<string, Metadata\EntitySet> */
-    private array $entitySets = [];
+    private $entitySets = [];
 
     /** @var array<string, Metadata\EntityType> */
-    private array $entityTypes = [];
+    private $entityTypes = [];
 
     /** @var array<string, array<int, string>> */
-    private array $enumTypes = [];
+    private $enumTypes = [];
 
     public function __construct(string $namespace)
     {

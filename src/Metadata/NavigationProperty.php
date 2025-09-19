@@ -1,13 +1,20 @@
 <?php
 namespace Rebel\BCApi2\Metadata;
 
-readonly class NavigationProperty
+class NavigationProperty
 {
+    private $type;
+    private $partner;
+    private $references;
+
     public function __construct(
-        private string $type,
-        private ?string $partner,
-        private array $references)
+        string $type,
+        ?string $partner,
+        array $references)
     {
+        $this->references = $references;
+        $this->partner = $partner;
+        $this->type = $type;
     }
 
     public function getType(): string

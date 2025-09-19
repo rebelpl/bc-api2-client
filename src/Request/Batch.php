@@ -6,18 +6,21 @@ use Rebel\BCApi2\Request;
 
 class Batch
 {
+    private $requests;
+
     /**
      * @param array<string, Request> $requests
      */
     public function __construct(
-        private array $requests = [])
+        array $requests = [])
     {
+        $this->requests = $requests;
     }
 
     public function add(string $key, Request $request): self
     {
         if (isset($this->requests[ $key ])) {
-            throw new Exception("Request '{$key}' already exists in the batch.");
+            throw new Exception("Request '$key' already exists in the batch.");
         }
 
         $this->requests[ $key ] = $request;
@@ -43,7 +46,9 @@ class Batch
                 'headers' => $request->getHeaderLines(),
                 'body' => json_decode($request->getBody()->getContents()),
                 'id' => (string)$key,
-            ], fn($value) => !is_null($value));
+            ], function ($value) {
+                return !is_null($value);
+            });
         }, $this->requests, array_keys($this->requests));
     }
 
@@ -55,6 +60,6 @@ class Batch
     public function getRequest(): Request
     {
         return new Request('POST', '$batch',
-            body: $this->toJson());
+            $this->toJson());
     }
 }

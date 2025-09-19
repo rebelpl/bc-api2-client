@@ -1,13 +1,20 @@
 <?php
 namespace Rebel\BCApi2\Metadata;
 
-readonly class EntityType
+class EntityType
 {
+    private $name;
+    private $properties;
+    private $navigationProperties;
+
     public function __construct(
-        private string $name,
-        private array $properties = [],
-        private array $navigationProperties = [])
+        string $name,
+        array $properties = [],
+        array $navigationProperties = [])
     {
+        $this->navigationProperties = $navigationProperties;
+        $this->properties = $properties;
+        $this->name = $name;
     }
 
     public function getName(): string
@@ -50,5 +57,4 @@ readonly class EntityType
     {
         return $this->navigationProperties[ $name ];
     }
-
 }

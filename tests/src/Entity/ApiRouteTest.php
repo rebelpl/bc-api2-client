@@ -14,7 +14,7 @@ class ApiRouteTest extends TestCase
             'version' => 'v2.1'
         ]);
 
-        $this->assertEquals('mycompany', $apiRoute->publisher);
-        $this->assertEquals('mycompany/sales/v2.1', $apiRoute->route);
+        $this->assertEquals('mycompany', $apiRoute->getPublisher());
+        $this->assertEquals('mycompany/sales/v2.1', $apiRoute->getRoute());
     }
 }

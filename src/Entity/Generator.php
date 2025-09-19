@@ -10,9 +10,9 @@ use Nette\PhpGenerator;
 use Rebel\BCApi2\Metadata\EntityType;
 use Carbon\Carbon;
 
-readonly class Generator
+class Generator
 {
-    const array EXCLUDED_ENTITYSETS = [
+    const EXCLUDED_ENTITYSETS = [
         'entityDefinitions',
         'companies',
         'subscriptions',
@@ -21,12 +21,16 @@ readonly class Generator
         'apicategoryroutes'
     ];
 
-    private string $namespacePrefix;
+    private $namespacePrefix;
+    
+    /** @var Metadata */
+    private $metadata;
 
     public function __construct(
-        private Metadata $metadata,
-        string           $namespacePrefix = 'Rebel\\BCApi2\\Entity\\')
+        Metadata $metadata,
+        string   $namespacePrefix = 'Rebel\\BCApi2\\Entity\\')
     {
+        $this->metadata = $metadata;
         $this->namespacePrefix = rtrim($namespacePrefix, '\\') . '\\';
     }
 
@@ -108,7 +112,7 @@ readonly class Generator
     {
         $entitySet = $this->metadata->getEntitySet($name) ?? $this->metadata->getEntitySetFor($name);
         if (!$entitySet) {
-            throw new Exception("Entity set '{$name}' not found in metadata.");
+            throw new Exception("Entity set '$name' not found in metadata.");
         }
 
         $files = [];
@@ -134,7 +138,6 @@ readonly class Generator
         $files[ $path ] = $this->generateClassFile($class, $entityName, array_merge([
             Carbon::class => null,
             Entity::class => null,
-            $this->namespacePrefix . 'Enums' => null,
         ], $this->generateRecordImports($entityType)));
 
         return $files;
@@ -150,7 +153,7 @@ readonly class Generator
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
             if (!$targetEntity) {
-                throw new Exception("Entity type '{$targetType}' not found in metadata.");
+                throw new Exception("Entity type '$targetType' not found in metadata.");
             }
 
             $targetEntityName = ucfirst($targetEntity->getName());
@@ -163,7 +166,7 @@ readonly class Generator
     public function generateRecordFor(EntityType $entityType, bool $isUpdateable): PhpGenerator\ClassType
     {
         $className = 'Record';
-        $class = new PhpGenerator\ClassType($className)
+        $class = (new PhpGenerator\ClassType($className))
             ->setExtends(Entity::class);
 
         $properties = $entityType->getProperties();
@@ -174,8 +177,13 @@ readonly class Generator
 
             $type = $this->matchPropertTypeToPhpType($property->getType());
             $class->addMember(
-                $this->generateRecordProperty($name, $type, $property->getType(), $isUpdateable)
+                $this->generateRecordPropertyGetMethod($name, $type)
             );
+            
+            if ($isUpdateable
+             && $setMethod = $this->generateRecordPropertySetMethod($name, $type, $property->getType())) {
+                $class->addMember($setMethod);
+            }
         }
 
         $classMap = [];
@@ -188,19 +196,19 @@ readonly class Generator
 
             $targetEntity = $this->metadata->getEntityType($targetType, true);
             if (!$targetEntity) {
-                throw new Exception("Entity type '{$targetType}' not found in metadata.");
+                throw new Exception("Entity type '$targetType' not found in metadata.");
             }
 
             $targetEntityName = ucfirst($targetEntity->getName()) . '\\Record';
             if ($property->isCollection()) {
                 $class->addMember(
-                    $this->generateRecordProperty($name, Entity\Collection::class, $property->getType(), false)
-                        ->addComment("@var ?Entity\\Collection<{$targetEntityName}>")
+                    $this->generateRecordPropertyGetMethod($name, Entity\Collection::class)
+                        ->addComment("@return ?Entity\\Collection<$targetEntityName>")
                 );
             }
             else {
                 $class->addMember(
-                    $this->generateRecordProperty($name, $this->namespacePrefix . $targetEntityName, $property->getType(), false)
+                    $this->generateRecordPropertyGetMethod($name, $this->namespacePrefix . $targetEntityName)
                 );
             }
 
@@ -209,87 +217,102 @@ readonly class Generator
 
         if (!empty($classMap)) {
             $class->addProperty('classMap', array_map(function ($value) { return new PhpGenerator\Literal($value . '::class'); }, $classMap))
-                ->setType('array')
                 ->setProtected();
         }
 
         return $class;
     }
-
-    protected function generateRecordProperty(string $name, string $phpType, string $propertyType, bool $isUpdateable): PhpGenerator\Property
+    
+    protected function generateRecordPropertyGetMethod(string $name, string $phpType): PhpGenerator\Method
     {
-        // id is always read-only
-        if ($name === 'id') {
-            $isUpdateable = false;
-        }
-
-        $property = new PhpGenerator\Property($name)->setNullable();
-
-        // enum type
-        if (str_starts_with($phpType, $this->metadata->getNamespace())) {
-            $enumName = ucfirst(substr($phpType, strlen($this->metadata->getNamespace()) + 1));
-            $property->setType($this->namespacePrefix . 'Enums\\' . $enumName);
-
-            $property->addHook('get', "\$this->getAsEnum('{$name}', Enums\\{$enumName}::class)");
-            if ($isUpdateable) {
-                $property->addHook('set')->setBody("\$this->set('{$name}', \$value);");
-            }
-
-            return $property;
-        }
+        $method = new PhpGenerator\Method('get' . ucfirst($name));
 
         // datetime types
         if ($phpType === \DateTime::class) {
-            $property->setType(Carbon::class);
-            $property->addHook('get', "\$this->getAsDateTime('{$name}')");
-            if ($isUpdateable) {
-                $property->addHook('set')->setBody($propertyType === 'Edm.Date'
-                    ? "\$this->setAsDate('{$name}', \$value);"
-                    : "\$this->setAsDateTime('{$name}', \$value);");
-            }
-
-            return $property;
+            $method->setReturnType(Carbon::class);
+            $method->setBody("return \$this->getAsDateTime('$name');");
+            return $method;
         }
-
+        
         // collection
         if ($phpType === Entity\Collection::class) {
-            $property->setType($phpType);
-            $property->addHook('get', "\$this->get('{$name}', 'collection')");
-            return $property;
+            $method->setReturnType(Entity\Collection::class);
+            $method->setBody("return \$this->get('$name', 'collection');");
+            return $method;
         }
-
+        
         // default
-        $property->setType($phpType);
-        $property->addHook('get', "\$this->get('{$name}')");
-        if ($isUpdateable) {
-            $property->addHook('set')
-                ->setBody("\$this->set('{$name}', \$value);");
+        $method->setReturnType($phpType);
+        $method->setBody("return \$this->get('$name');");
+        return $method;
+    }
+
+    protected function generateRecordPropertySetMethod(string $name, string $phpType, string $propertyType): ?PhpGenerator\Method
+    {
+        if (($name === 'id') || ($phpType === Entity\Collection::class)) {
+            return null;
         }
 
-        return $property;
+        $method = new PhpGenerator\Method('set' . ucfirst($name));
+        $method->setParameters([
+            (new PhpGenerator\Parameter('value'))->setType($phpType),
+        ]);
+        $method->setReturnType('self');
+
+        // datetime types
+        if ($phpType === \DateTime::class) {
+            $method->setBody($propertyType === 'Edm.Date'
+                ? "\$this->setAsDate('$name', \$value);"
+                : "\$this->setAsDateTime('$name', \$value);");
+        }
+        else {
+            $method->setBody("\$this->set('$name', \$value);");
+        }
+        
+        $method->addBody("\nreturn \$this;");
+        return $method;
     }
 
     private function matchPropertTypeToPhpType(string $type): string
     {
-        return match ($type) {
-            'Edm.String', 'Edm.Guid', 'Edm.Stream', 'Edm.Binary' => 'string',
-            'Edm.Int32', 'Edm.Int64' => 'int',
-            'Edm.Decimal', 'Edm.Double' => 'float',
-            'Edm.Boolean' => 'bool',
-            'Edm.Date', 'Edm.DateTimeOffset' => \DateTime::class,
-            default => $type,
-        };
+        switch ($type) {
+            case 'Edm.String':
+            case 'Edm.Guid':
+            case 'Edm.Stream':
+            case 'Edm.Binary':
+                return 'string';
+
+            case 'Edm.Int32':
+            case 'Edm.Int64':
+                return 'int';
+
+            case 'Edm.Decimal':
+            case 'Edm.Double':
+                return 'float';
+
+            case 'Edm.Date':
+            case 'Edm.DateTimeOffset':
+                return \DateTime::class;
+
+            case 'Edm.Boolean':
+                return 'bool';
+        }
+
+        if (str_starts_with($type, $this->metadata->getNamespace())) {
+            return 'string';
+        }
+        
+        throw new Exception("Unsupported type '$type'.");
     }
 
     protected function generateRepositoryFor(Metadata\EntitySet $entitySet): PhpGenerator\ClassType
     {
         $className = 'Repository';
-        $class = new PhpGenerator\ClassType($className)
-            ->setExtends(Repository::class)
-            ->setReadOnly();
+        $class = (new PhpGenerator\ClassType($className))
+            ->setExtends(Repository::class);
 
         $constructor = $class->addMethod('__construct')
-            ->setBody("parent::__construct(\$client, entitySetName: '{$entitySet->getName()}', entityClass: Record::class);");
+            ->setBody("parent::__construct(\$client, '{$entitySet->getName()}', Record::class);");
 
         $constructor->addParameter('client')
             ->setType(Client::class);
@@ -297,19 +320,19 @@ readonly class Generator
         return $class;
     }
 
-    protected function generatePropertiesFor(Metadata\EntityType $entityType): PhpGenerator\EnumType
+    protected function generatePropertiesFor(Metadata\EntityType $entityType): PhpGenerator\ClassType
     {
         $className = 'Properties';
-        $class = new PhpGenerator\EnumType($className);
+        $class = new PhpGenerator\ClassType($className);
 
         $properties = $entityType->getProperties();
         foreach ($properties as $name => $property) {
-            $class->addCase($name);
+            $class->addConstant($name, $name);
         }
 
         $navProperties = $entityType->getNavigationProperties();
         foreach ($navProperties as $name => $property) {
-            $class->addCase($name);
+            $class->addConstant($name, $name);
         }
 
         return $class;
@@ -332,19 +355,19 @@ readonly class Generator
         return $files;
     }
 
-    public function generateEnumTypeFor(string $name): PhpGenerator\EnumType
+    public function generateEnumTypeFor(string $name): PhpGenerator\ClassType
     {
         $enumMembers = $this->metadata->getEnumTypeMembers($name);
         if (is_null($enumMembers)) {
-            throw new Exception("Enum type '{$name}' not found in metadata.");
+            throw new Exception("Enum type '$name' not found in metadata.");
         }
 
         $className = ucfirst($name);
-        $enum = new PhpGenerator\EnumType($className);
+        $enum = new PhpGenerator\ClassType($className);
 
         foreach ($enumMembers as $value) {
             $case = preg_replace('/_x002[a-zA-Z0-9]_/', '', $value) ?: 'Null';
-            $enum->addCase($case, $value);
+            $enum->addConstant($case, $value);
         }
 
         return $enum;

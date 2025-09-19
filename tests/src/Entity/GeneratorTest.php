@@ -1,14 +1,18 @@
 <?php
 namespace Rebel\Test\BCApi2\Entity;
 
+use Nette\PhpGenerator\Method;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Entity\Generator;
 use Rebel\BCApi2\Metadata;
 
 class GeneratorTest extends TestCase
 {
-    private Generator $generator;
-    private Metadata $metadata;
+    /** @var Generator */
+    private $generator;
+    
+    /** @var Metadata */
+    private $metadata;
     
     protected function setUp(): void
     {
@@ -22,13 +26,11 @@ class GeneratorTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
 
-        $property = $classType->getProperty('orderDate');
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDate(', $setHook->getBody());
+        $setMethod = $classType->getMethod('setOrderDate');
+        $this->assertStringContainsString('setAsDate(', $setMethod->getBody());
 
-        $property = $classType->getProperty('lastModifiedDateTime');
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDateTime(', $setHook->getBody());
+        $setMethod = $classType->getMethod('setLastModifiedDateTime');
+        $this->assertStringContainsString('setAsDateTime(', $setMethod->getBody());
 
     }
     
@@ -37,8 +39,7 @@ class GeneratorTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
         
-        $property = $classType->getProperty('id');
-        $setHook = $property->getHook('set');
-        $this->assertNull($setHook);
+        $this->assertInstanceOf(Method::class, $classType->getMethod('setId'));
+        $this->assertNull($classType->getMethod('setId'));
     }
 }

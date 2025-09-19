@@ -6,7 +6,8 @@ use Rebel\BCApi2\Metadata;
 
 class MetadataTest extends TestCase
 {
-    private Metadata $metadata;
+    /** @var Metadata */
+    private $metadata;
 
     public function setUp(): void
     {

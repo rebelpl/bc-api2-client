@@ -15,11 +15,14 @@ use Rebel\BCApi2\Exception;
 
 class RepositoryTest extends TestCase
 {
-    protected Client $client;
-    protected MockHandler $mockResponse;
+    /** @var Client */
+    protected $client;
+    
+    /** @var MockHandler */
+    protected $mockResponse;
 
     /** @var array<int, array{'request': Request, 'response': Response}> */
-    protected array $historyContainer = [];
+    protected $historyContainer = [];
 
     protected function setUp(): void
     {
@@ -30,13 +33,11 @@ class RepositoryTest extends TestCase
         $stack->push($history);
 
         $this->client = new Client(
-            accessToken: 'test-token',
-            environment: 'test-env',
-            apiRoute: 'foo/bar/v1.5',
-            companyId: 'test-company-id',
-            options: [
-                'handler' => $stack,
-            ]
+            'test-token',
+            'test-env',
+            'foo/bar/v1.5',
+            'test-company-id',
+            [ 'handler' => $stack, ]
         );
     }
 
@@ -70,7 +71,7 @@ class RepositoryTest extends TestCase
             file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], size: 3, skip: 2, expanded: ['salesOrderLines', 'customer']);
+        $result = $repository->findBy([], null, 3, 2, ['salesOrderLines', 'customer']);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
@@ -111,7 +112,7 @@ class RepositoryTest extends TestCase
             file_get_contents('tests/files/customers.json')));
 
         $repository = new Repository($this->client, 'customers');
-        $result = $repository->findBy([ 'gln' => '12345' ], expanded: [
+        $result = $repository->findBy([ 'gln' => '12345' ], null, null, null, [
             'shipToAddresses' => [ 'code' => '196238' ],
         ]);
         

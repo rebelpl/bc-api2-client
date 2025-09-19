@@ -7,7 +7,7 @@ use Rebel\BCApi2\Entity\Company;
 class CompaniesTest extends TestCase
 {
     /** @var Company[]  */
-    private array $companies = [];
+    private $companies = [];
 
     protected function setUp(): void
     {
@@ -21,13 +21,13 @@ class CompaniesTest extends TestCase
     {
         $this->assertCount(2, $this->companies);
         foreach ($this->companies as $company) {
-            $this->assertContains($company->id, [
+            $this->assertContains($company->getId(), [
                 'e802e7d1-5408-f011-9afa-6045bdabb318',
                 '3ab5c248-e72b-f011-9a4a-7c1e5275406f',
             ]);
 
-            $this->assertNotEmpty($company->name);
-            $this->assertGreaterThan(new \DateTime('2020-01-01'), $company->systemCreatedAt);
+            $this->assertNotEmpty($company->getName());
+            $this->assertGreaterThan(new \DateTime('2020-01-01'), $company->getSystemCreatedAt());
         }
     }
 }

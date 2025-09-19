@@ -10,22 +10,28 @@ use Rebel\BCApi2\Entity\Repository;
 
 class Client
 {
-    const string BASE_URL = 'https://api.businesscentral.dynamics.com/v2.0';
+    const  BASE_URL = 'https://api.businesscentral.dynamics.com/v2.0';
 
-    const int
+    const
         HTTP_OK = 200,
         HTTP_CREATED = 201,
         HTTP_NO_CONTENT = 204,
         HTTP_NOT_FOUND = 404;
     
-    const string DEFAULT_API_ROUTE = 'v2.0';
+    const  DEFAULT_API_ROUTE = 'v2.0';
 
-    const string HEADER_IFMATCH = 'If-Match';
-    protected ClientInterface $client;
-    private readonly string $baseUrl;
-    private readonly string $apiRoute;
+    const  HEADER_IFMATCH = 'If-Match';
+    
+    /** @var ClientInterface  */
+    protected $client;
+    
+    /** @var string string */
+    private $baseUrl;
+    private $apiRoute;
 
-    protected array $defaultHeaders;
+    protected $defaultHeaders = [];
+    private $accessToken;
+    private $companyId;
 
     /**
      * Available $options:
@@ -33,33 +39,23 @@ class Client
      * - httpClient: instance of Psr\Http\Client\ClientInterface
      */
     public function __construct(
-        private readonly string  $accessToken,
+        string  $accessToken,
         string  $environment,
         ?string $apiRoute = null,
-        private readonly ?string $companyId = null,
-        array                    $options = [])
+        ?string $companyId = null,
+        array $options = [])
     {
+        $this->companyId = $companyId;
+        $this->accessToken = $accessToken;
         $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
         $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
-            . "/{$environment}/api/";
+            . "/$environment/api/";
         $this->apiRoute = trim($apiRoute ?: self::DEFAULT_API_ROUTE, '/');
 
         $this->defaultHeaders = [
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ];
-    }
-
-    private function initHttpClient(array $options): void
-    {
-        $this->client = new GuzzleHttp\Client(array_merge([
-            'base_uri' => $this->getBaseUrl(),
-            'headers' => [
-                'Authorization' => 'Bearer ' . $this->accessToken,
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ]
-        ], $options));
     }
 
     public function getHttpClient(): ClientInterface
@@ -78,7 +74,7 @@ class Client
             throw new Exception('You cannot call company resources without valid companyId. Run getCompanies() to obtain a list of companies.');
         }
 
-        return "companies({$this->companyId})";
+        return "companies($this->companyId)";
     }
 
     public function buildUri(string $resource): Psr7\Uri
@@ -128,10 +124,10 @@ class Client
      */
     public function getCompanies(): array
     {
-        return new Repository($this,
-            entitySetName: 'companies',
-            entityClass: Company::class,
-            isCompanyResource: false)
+        return (new Repository($this,
+            'companies',
+            Company::class,
+            false))
             ->findAll();
     }
 
@@ -141,10 +137,10 @@ class Client
      */
     public function getApiRoutes(): array
     {
-        return new Repository($this,
-            entitySetName: 'apicategoryroutes',
-            entityClass: ApiRoute::class,
-            isCompanyResource: false)
+        return (new Repository($this,
+            'apicategoryroutes',
+            ApiRoute::class,
+            false))
             ->findAll();
     }
 

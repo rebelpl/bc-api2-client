@@ -2,18 +2,19 @@
 namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
-use Nette\Utils\ArrayHash;
 
 class UriBuilder
 {
-    private readonly string $resourceUrl;
-    protected ?string $includePart = null;
-    protected array $queryOptions = [];
+    private $resourceUrl;
+    protected $includePart = null;
+    protected $queryOptions = [];
+    private $primaryKey;
 
     public function __construct(
         string $resourceUrl,
-        private ?string $primaryKey = null)
+        ?string $primaryKey = null)
     {
+        $this->primaryKey = $primaryKey;
         $this->resourceUrl = trim($resourceUrl, '/');
     }
 
@@ -44,7 +45,7 @@ class UriBuilder
     
     private function expandStringFromArray(array $array): string
     {
-        if (array_is_list($array)) {
+        if ($this->arrayIsList($array)) {
             return join(',', $array);
         }
 
@@ -55,6 +56,18 @@ class UriBuilder
         }
         
         return join(',', $expand);
+    }
+
+    private function arrayIsList(array $array): bool
+    {
+        $i = 0;
+        foreach ($array as $key => $value) {
+            if ($key !== $i++) {
+                return false;
+            }
+        }
+
+        return true;
     }
     
     public function top(?int $top): self

@@ -14,11 +14,14 @@ use Rebel\BCApi2\Request;
 
 class ClientTest extends TestCase
 {
-    protected Client $client;
-    protected MockHandler $mockResponse;
+    /** @var Client */
+    protected $client;
+    
+    /** @var MockHandler */
+    protected $mockResponse;
 
     /** @var array<int, array{'request': RequestInterface, 'response': ResponseInterface}> */
-    protected array $historyContainer = [];
+    protected $historyContainer = [];
 
     protected function setUp(): void
     {
@@ -30,13 +33,11 @@ class ClientTest extends TestCase
         $stack->push($history);
 
         $this->client = new Client(
-            accessToken: 'test-token',
-            environment: 'test-env',
-            apiRoute:    'foo/bar/v1.5',
-            companyId:   'test-company-id',
-            options: [
-                'handler' => $stack,
-            ]
+            'test-token',
+            'test-env',
+            'foo/bar/v1.5',
+            'test-company-id',
+            [ 'handler' => $stack, ]
         );
     }
 
@@ -52,7 +53,7 @@ class ClientTest extends TestCase
         $this->assertStringStartsWith('https://api.businesscentral.dynamics.com/v2.0', $baseUrl);
         $this->assertStringEndsWith('/api/', $baseUrl);
 
-        $client = new Client(accessToken: 'TEST', environment: 'production');
+        $client = new Client('TEST', 'production');
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/production/api/',
             $client->getBaseUrl());
@@ -159,14 +160,14 @@ class ClientTest extends TestCase
         $companies = $this->client->getCompanies();
         foreach ($companies as $company) {
             $this->assertInstanceOf(Company::class, $company);
-            $this->assertContains($company->id, [
+            $this->assertContains($company->getId(), [
                 'e802e7d1-5408-f011-9afa-6045bdabb318',
                 '3ab5c248-e72b-f011-9a4a-7c1e5275406f',
             ]);
 
-            $this->assertIsString($company->name);
-            $this->assertGreaterThan(4, strlen($company->name));
-            $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->systemCreatedAt);
+            $this->assertIsString($company->getName());
+            $this->assertGreaterThan(4, strlen($company->getName()));
+            $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->getSystemCreatedAt());
         }
 
         $lastRequest = $this->getLastRequest();

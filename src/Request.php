@@ -5,8 +5,8 @@ use GuzzleHttp\Psr7;
 
 class Request extends Psr7\Request
 {
-    const string HEADER_ETAG = 'If-Match';
-    public string $id;
+    const  HEADER_ETAG = 'If-Match';
+    public $id;
 
     public function __construct(
         string  $method,

@@ -10,21 +10,28 @@ use Rebel\BCApi2\Request\Batch;
 /**
  * @template T of Entity
  */
-readonly class Repository
+class Repository
 {
-    private string $baseUrl;
+    /** @var Client */
+    protected $client;
+
+    /** @var string */
+    protected $entityClass = Entity::class;
+    private $baseUrl;
 
     /**
      * @param class-string<T> $entityClass
      */
     public function __construct(
-        protected Client $client,
+        Client $client,
         string $entitySetName,
-        protected string $entityClass = Entity::class,
-        bool             $isCompanyResource = true)
+        string $entityClass = Entity::class,
+        bool   $isCompanyResource = true)
     {
+        $this->entityClass = $entityClass;
+        $this->client = $client;
         if (!class_exists($this->entityClass)) {
-            throw new Exception("Class '{$this->entityClass}' does not exist.");
+            throw new Exception("Class '$this->entityClass' does not exist.");
         }
 
         $this->baseUrl = $isCompanyResource
@@ -56,7 +63,7 @@ readonly class Repository
     public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
     {
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl)
+            (new Request\UriBuilder($this->baseUrl))
                 ->where($criteria)
                 ->orderBy($orderBy)
                 ->top($size)
@@ -83,7 +90,7 @@ readonly class Repository
     public function get(string $primaryKey, array $expanded = []): ?Entity
     {
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl, $primaryKey)
+            (new Request\UriBuilder($this->baseUrl, $primaryKey))
                 ->expand($expanded));
 
         $response = $this->client->call($request);
@@ -224,6 +231,18 @@ readonly class Repository
 
     private function hydrate(array $data, array $expanded = [], ?string $context = null): Entity
     {
-        return new $this->entityClass($data, array_is_list($expanded) ? $expanded : array_keys($expanded), $context);
+        return new $this->entityClass($data, $this->arrayIsList($expanded) ? $expanded : array_keys($expanded), $context);
+    }
+    
+    private function arrayIsList(array $array): bool
+    {
+        $i = 0;
+        foreach ($array as $key => $value) {
+            if ($key !== $i++) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

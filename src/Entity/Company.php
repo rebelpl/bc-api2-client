@@ -5,35 +5,42 @@ use Rebel\BCApi2\Entity;
 
 class Company extends Entity
 {
-    public string $id {
-        get => $this->get('id');
+    public function getId(): string
+    {
+        return $this->get('id');
     }
 
-    public string $name {
-        get => $this->get('name');
+    public function getName(): string
+    {
+        return $this->get('name');
     }
 
-    public string $displayName {
-        get => $this->get('displayName');
+    public function getDisplayName(): string
+    {
+        return $this->get('displayName');
     }
 
-    public string $systemVersion {
-        get => $this->get('systemVersion');
+    public function getSystemVersion(): string
+    {
+        return $this->get('systemVersion');
     }
 
-    public \DateTime $systemCreatedAt {
-        get => $this->get('systemCreatedAt', 'datetime');
+    public function getSystemCreatedAt(): \DateTime {
+        return $this->get('systemCreatedAt', 'datetime');
     }
 
-    public string $systemCreatedBy {
-        get => $this->get('systemCreatedBy');
+    public function getSystemCreatedBy(): string
+    {
+        return $this->get('systemCreatedBy');
     }
 
-    public \DateTime $systemModifiedAt {
-        get => $this->get('systemModifiedAt', 'datetime');
+    public function getSystemModifiedAt(): \DateTime
+    {
+        return $this->get('systemModifiedAt', 'datetime');
     }
 
-    public string $systemModifiedBy {
-        get => $this->get('systemModifiedBy');
+    public function getSystemModifiedBy(): string
+    {
+        return $this->get('systemModifiedBy');
     }
 }
