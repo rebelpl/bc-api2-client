@@ -3,7 +3,7 @@ namespace Rebel\BCApi2\Metadata;
 
 readonly class EntitySet
 {
-    const ODATA_CAPABILITIES = 'Org.OData.Capabilities.V1';
+    const string ODATA_CAPABILITIES = 'Org.OData.Capabilities.V1';
 
     public function __construct(
         private string $name,

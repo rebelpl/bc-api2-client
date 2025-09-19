@@ -4,7 +4,6 @@ namespace Rebel\BCApi2;
 class Metadata
 {
     const string FILTER_SUFFIX = '_FilterOnly';
-    private string $namespace;
 
     /** @var array<string, Metadata\EntitySet> */
     private array $entitySets = [];
@@ -15,9 +14,8 @@ class Metadata
     /** @var array<string, array<int, string>> */
     private array $enumTypes = [];
 
-    public function __construct(string $namespace)
+    public function __construct(private readonly string $namespace)
     {
-        $this->namespace = $namespace;
     }
 
     public function addEnumType(string $name, array $members): void
@@ -87,13 +85,7 @@ class Metadata
 
     public function getEntitySetFor(string $name): ?Metadata\EntitySet
     {
-        foreach ($this->entitySets as $entitySet) {
-            if ($entitySet->getEntityType()->getName() === $name) {
-                return $entitySet;
-            }
-        }
-
-        return null;
+        return array_find($this->entitySets, fn($entitySet) => $entitySet->getEntityType()->getName() === $name);
     }
 
     public function getNamespace(): string
