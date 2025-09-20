@@ -10,17 +10,18 @@ use Rebel\BCApi2\Request\Batch;
 /**
  * @template T of Entity
  */
-readonly class Repository
+class Repository
 {
-    private string $baseUrl;
+    private readonly string $baseUrl;
+    private array $expandedByDefault = [];
 
     /**
      * @param class-string<T> $entityClass
      */
     public function __construct(
-        protected Client $client,
+        protected readonly Client $client,
         string $entitySetName,
-        protected string $entityClass = Entity::class,
+        protected readonly string $entityClass = Entity::class,
         bool             $isCompanyResource = true)
     {
         if (!class_exists($this->entityClass)) {
@@ -41,20 +42,27 @@ readonly class Repository
     {
         return $this->baseUrl;
     }
-
-    /**
-     * @return T[]
-     */
-    public function findAll($orderBy = null): array
+    
+    public function setExpandedByDefault(array $expanded): static
     {
-        return $this->findBy([], $orderBy);
+        $this->expandedByDefault = $expanded;
+        return $this;
     }
 
     /**
      * @return T[]
      */
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
+    public function findAll($orderBy = null, ?array $expanded = null): array
     {
+        return $this->findBy([], $orderBy, expanded: $expanded);
+    }
+
+    /**
+     * @return T[]
+     */
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, ?array $expanded = null): array
+    {
+        $expanded = $expanded ?? $this->expandedByDefault;
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl)
                 ->where($criteria)
@@ -80,8 +88,9 @@ readonly class Repository
     /**
      * @return T
      */
-    public function get(string $primaryKey, array $expanded = []): ?Entity
+    public function get(string $primaryKey, ?array $expanded = null): ?Entity
     {
+        $expanded = $expanded ?? $this->expandedByDefault;
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl, $primaryKey)
                 ->expand($expanded));
@@ -102,7 +111,7 @@ readonly class Repository
     /**
      * @return T
      */
-    public function find(string $primaryKey, array $expanded = []): ?Entity
+    public function find(string $primaryKey, ?array $expanded = null): ?Entity
     {
         return $this->get($primaryKey, $expanded);
     }
@@ -222,7 +231,7 @@ readonly class Repository
         }
     }
 
-    private function hydrate(array $data, array $expanded = [], ?string $context = null): Entity
+    private function hydrate(array $data, array $expanded, ?string $context = null): Entity
     {
         return new $this->entityClass($data, array_is_list($expanded) ? $expanded : array_keys($expanded), $context);
     }
