@@ -24,9 +24,10 @@ To create a client, you need a valid Access Token. You can use an OAuth library 
 
 ```php
 $client = new Rebel\BCApi2\Client(
-    accessToken: $accessToken,
-    environment: 'sandbox',
-    companyId: '123456',
+    $accessToken,    // access token from OAuth2
+    'sandbox',       // environment name
+    '/foo/bar/v1.0'  // api path (defaults to /v2.0)
+    '123456',        // company id (optional)
 );
 ```
 
@@ -40,8 +41,7 @@ $client = Rebel\BCApi2\Client\Factory::useClientCredentials(
         'clientId' => 'xxxxx-yyyy-zzzz-xxxx-yyyyyyyyyyyy',
         'clientSecret' => '*************************',
     ]),
-    environment: 'sandbox',
-    companyId: '123456');
+    'sandbox', '/foo/bar/v1.0' '123456');
 ```
 
 ```php
@@ -53,15 +53,14 @@ $client = Rebel\BCApi2\Client\Factory::useAuthorizationCode(
         'clientSecret' => '*************************',
         'redirectUri' => 'https://localhost',
     ]),
-    environment: 'sandbox',
-    companyId: '123456',
-    tokenFilename: 'tmp/token.json');
+    'sandbox', '/foo/bar/v1.0' '123456', [],
+    'tmp/token.json');
 ```
 
 ### Get Companies
 ```php
 foreach ($client->getCompanies() as $company) {
-    echo " - {$company->name}:\t{$company->id}\n";
+    echo " - {$company->getName()}:\t{$company->getId()}\n";
 }
 ```
 
@@ -76,11 +75,12 @@ foreach ($data['value'] as $item) {
 
 ### Use Request helper
 ```php
+$etag = urldecode($item['@odata.etag']);
 $request = new Rebel\BCApi2\Request('PATCH', 'companies(123456)/items(32d80403)',
-    body: json_encode([
+    json_encode([
         'displayName' => 'Updated Item Name',
         'unitPrice' => 99.95,
-     ]), etag: 'W/"JzE5OzIxMzk2MzA0ODM0ODgyMTU4MDgxOzAwOyc="');
+     ]), $etag);
 $response = $client->call($request);
 ```
 
@@ -89,7 +89,7 @@ $response = $client->call($request);
 
 ```php
 # find sales orders based on given criteria
-$repository = new Rebel\BCApi2\Entity\Repository($client, entitySetName: 'salesOrders');
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
 $results = $repository->findBy([
     'customerNumber' => [ 'CU-TEST', 'CU-0123' ]
     'customerPriceGroup' => 'GOLD'
@@ -130,27 +130,27 @@ $results = $repository->findBy([ 'sellToCountry' => ['PL', 'UK'] ], top: 10, exp
 echo count($results) . " sales orders found, only lines with quantity > 5 included.\n";
 ```
 
-### Working with expandedproperties
+### Working with expanded properties
 
 Business Central does not support deep update and mixed insert/update operations.
 The Entity\Repository class provides a custom save() method that handles this limitation
 by using batchUpdate() to create / update the nested properties.
 
 ```php
-// Create a SalesOrder repository
-$repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
-
 // Get a sales order by ID
-$salesOrder = $repository->get('abc-123', expanded: [ 'salesOrderLines' ]);
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
+$salesOrder = $repository->get('abc-123', [ 'salesOrderLines' ]);
 
 // Update properties of the sales order
-$salesOrder->externalDocumentNumber = 'TEST';
+$salesOrder->set('externalDocumentNumber', 'TEST');
+
+$salesLines = $salesOrder->get('salesOrderLines'); 
 
 // Update existing line
-$salesOrder->salesOrderLines[0]->quantity = 10;
+$salesLines[0]->set('quantity', 10);
 
 // Add new line
-$salesOrder->salesOrderLines[] = new Rebel\BCApi2\Entity\SalesOrderLine\Record([
+$salesLines[] = new Rebel\BCApi2\Entity([
     'itemId' => '12345',
     'quantity' => 5
 ]);
@@ -171,17 +171,17 @@ curl -X GET "https://api.businesscentral.dynamics.com/v2.0/<environment>/api/<ap
 ```php
 # fetch Metadata from BC...
 $metadata = new Rebel\BCApi2\Client(
-    accessToken: $token->getToken(),
-    environment: 'sandbox',
-    apiRoute: '/mycompany/myapi/v1.5'
+    $token->getToken(),
+    'sandbox',
+    '/foo/bar/v1.0'
 )->getMetadata();
 
 # ... or from the local file
 $metadata = Rebel\BCApi2\Metadata\Factory::fromString(file_get_contents('files/metadata.xml'));
 
 # then generate the files
-$generator = new Rebel\BCApi2\Entity\Generator($metadata, namespacePrefix: 'App\\Models\\');
-$generator->saveAllFilesTo('app/Models', overwrite: true);
+$generator = new Rebel\BCApi2\Entity\Generator($metadata, 'App\\Models\\');
+$generator->saveAllFilesTo('app/Models', true);
 ```
 
 # Tests
