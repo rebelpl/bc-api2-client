@@ -203,7 +203,7 @@ class Generator
             if ($property->isCollection()) {
                 $class->addMember(
                     $this->generateRecordPropertyGetMethod($name, Entity\Collection::class)
-                        ->addComment("@return ?Entity\\Collection<$targetEntityName>")
+                        ->addComment("@return Entity\\Collection|{$targetEntityName}[]")
                 );
             }
             else {
