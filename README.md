@@ -90,10 +90,11 @@ $response = $client->call($request);
 ```php
 # find sales orders based on given criteria
 $repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
+$repository->setExpandedByDefault([ 'salesOrderLines' ]);
 $results = $repository->findBy([
     'customerNumber' => [ 'CU-TEST', 'CU-0123' ]
     'customerPriceGroup' => 'GOLD'
-], 'orderDate DESC', size: 5, expanded: [ 'salesOrderLines' ]);
+], 'orderDate DESC', size: 5);
 foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
@@ -102,7 +103,7 @@ foreach ($results as $salesOrder) {
 
 # create new salesOrder
 $salesOrder = new Rebel\BCApi2\Entity([
-    Rebel\BCApi2\Request\Expression::equals('customerNumber', 'CU-0123')
+    'customerNumber' => 'CU-0123',
     'externalDocumentNumber' => 'TEST/123',
     'salesOrderLines' => [
         [
@@ -118,7 +119,7 @@ $salesOrder = new Rebel\BCApi2\Entity([
             "quantity" => 20
         ],
     ],
-], expanded: [ 'salesOrderLines' ]);
+]);
 
 $repository->create($salesOrder);
 echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";

@@ -18,6 +18,7 @@ class Repository
     /** @var string */
     protected $entityClass = Entity::class;
     private $baseUrl;
+    private array $expandedByDefault = [];
 
     /**
      * @param class-string<T> $entityClass
@@ -48,20 +49,27 @@ class Repository
     {
         return $this->baseUrl;
     }
-
-    /**
-     * @return T[]
-     */
-    public function findAll($orderBy = null): array
+    
+    public function setExpandedByDefault(array $expanded): static
     {
-        return $this->findBy([], $orderBy);
+        $this->expandedByDefault = $expanded;
+        return $this;
     }
 
     /**
      * @return T[]
      */
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
+    public function findAll($orderBy = null, ?array $expanded = null): array
     {
+        return $this->findBy([], $orderBy, null, null, $expanded);
+    }
+
+    /**
+     * @return T[]
+     */
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, ?array $expanded = null): array
+    {
+        $expanded = $expanded ?? $this->expandedByDefault;
         $request = new Request('GET',
             (new Request\UriBuilder($this->baseUrl))
                 ->where($criteria)
@@ -87,8 +95,9 @@ class Repository
     /**
      * @return T
      */
-    public function get(string $primaryKey, array $expanded = []): ?Entity
+    public function get(string $primaryKey, ?array $expanded = null): ?Entity
     {
+        $expanded = $expanded ?? $this->expandedByDefault;
         $request = new Request('GET',
             (new Request\UriBuilder($this->baseUrl, $primaryKey))
                 ->expand($expanded));
@@ -109,7 +118,7 @@ class Repository
     /**
      * @return T
      */
-    public function find(string $primaryKey, array $expanded = []): ?Entity
+    public function find(string $primaryKey, ?array $expanded = null): ?Entity
     {
         return $this->get($primaryKey, $expanded);
     }
@@ -229,7 +238,7 @@ class Repository
         }
     }
 
-    private function hydrate(array $data, array $expanded = [], ?string $context = null): Entity
+    private function hydrate(array $data, array $expanded, ?string $context = null): Entity
     {
         return new $this->entityClass($data, $this->arrayIsList($expanded) ? $expanded : array_keys($expanded), $context);
     }

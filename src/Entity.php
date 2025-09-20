@@ -185,7 +185,7 @@ class Entity
             return;
         }
 
-        if ($this->isExpandedProperty($property)) {
+        if ($this->isExpandedProperty($property) || isset($this->classMap[ $property ])) {
             $this->expanded[ $property ] = $this->hydrate($property, $value);
             return;
         }
