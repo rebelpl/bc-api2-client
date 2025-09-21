@@ -14,8 +14,6 @@ readonly class Expression
     const string
         EQ = 'eq',  // Equal to
         NE = 'ne',  // Not equal to
-        IN = 'in',  // In
-        NI = 'ni',  // Not in
         GT = 'gt',  // Greater than
         GE = 'ge',  // Greater than or equal to
         LT = 'lt',  // Lesser than
@@ -55,6 +53,8 @@ readonly class Expression
         '<' => self::LT,
         '=<' => self::LE,
         '<=' => self::LE,
+        'in' => self::EQ,
+        'ni' => self::NE,
     ];
 
     private string $field;
@@ -72,13 +72,22 @@ readonly class Expression
     {
         if (is_array($this->value)) {
             return match ($this->operator) {
-                self::IN => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
-                self::NI => self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)),
-                default => throw new \Exception("Array values can be only used with 'in' and 'ni' operators."),
+                self::EQ => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
+                self::NE => self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)),
+
+                self::STARTSWITH => self::or(array_map(fn($val) => self::startsWith($this->field, $val), $this->value)),
+                self::ENDSWITH   => self::or(array_map(fn($val) => self::endsWith($this->field, $val), $this->value)),
+                self::CONTAINS   => self::or(array_map(fn($val) => self::contains($this->field, $val), $this->value)),
+                
+                default => throw new \Exception("Array values can be only used with selected operators."),
             };
         }
-        
-        return join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]);
+
+        return match ($this->operator) {
+            self::STARTSWITH, self::ENDSWITH, self::CONTAINS
+                => sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value)),
+            default => join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]), 
+        };
     }
 
     public function encodeODataValue(mixed $value): string {
@@ -109,12 +118,12 @@ readonly class Expression
 
     public static function in(string $field, array $values): Expression
     {
-        return new Expression($field, self::IN, $values);
+        return self::equals($field, $values);
     }
 
     public static function notIn(string $field, array $values): Expression
     {
-        return new Expression($field, self::NI, $values);
+        return self::notEquals($field, $values);
     }
 
     public static function equals(string $field, mixed $value): Expression
@@ -147,12 +156,12 @@ readonly class Expression
         return self::lesserThan($field, $value, true);
     }
 
-    public static function startswith(string $field, mixed $value): Expression
+    public static function startsWith(string $field, mixed $value): Expression
     {
         return new Expression($field, self::STARTSWITH, $value);
     }
 
-    public static function endswith(string $field, mixed $value): Expression
+    public static function endsWith(string $field, mixed $value): Expression
     {
         return new Expression($field, self::ENDSWITH, $value);
     }

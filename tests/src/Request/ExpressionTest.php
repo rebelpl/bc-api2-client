@@ -41,6 +41,9 @@ class ExpressionTest extends TestCase
 
         $expression = Expression::notIn('orderNo', [ 'ZS-TEST', 'ZS-ANOTHER' ]);
         $this->assertEquals("orderNo ne 'ZS-TEST' and orderNo ne 'ZS-ANOTHER'", (string)$expression);
+
+        $expression = Expression::startsWith('description', [ 'foo', 'bar' ]);
+        $this->assertEquals("(startswith(description, 'foo') or startswith(description, 'bar'))", (string)$expression);
     }
 
     public function testComplexExpressions()
