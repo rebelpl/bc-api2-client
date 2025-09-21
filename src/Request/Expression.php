@@ -73,7 +73,7 @@ readonly class Expression
         if (is_array($this->value)) {
             return match ($this->operator) {
                 self::IN => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
-                self::NI => '(' . self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)) . ')',
+                self::NI => self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)),
                 default => throw new \Exception("Array values can be only used with 'in' and 'ni' operators."),
             };
         }
@@ -114,7 +114,7 @@ readonly class Expression
 
     public static function notIn(string $field, array $values): Expression
     {
-        return new Expression($field, self::IN, $values);
+        return new Expression($field, self::NI, $values);
     }
 
     public static function equals(string $field, mixed $value): Expression
@@ -145,6 +145,21 @@ readonly class Expression
     public static function lesserOrEqualThan(string $field, mixed $value): Expression
     {
         return self::lesserThan($field, $value, true);
+    }
+
+    public static function startswith(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::STARTSWITH, $value);
+    }
+
+    public static function endswith(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::ENDSWITH, $value);
+    }
+
+    public static function contains(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::CONTAINS, $value);
     }
 
     public static function and(array $expressions): string
