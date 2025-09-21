@@ -53,8 +53,6 @@ class Expression
         '<' => self::LT,
         '=<' => self::LE,
         '<=' => self::LE,
-        'in' => self::EQ,
-        'ni' => self::NE,
     ];
 
     private $field;
@@ -102,11 +100,15 @@ class Expression
             }
         }
 
-        return match ($this->operator) {
-            self::STARTSWITH, self::ENDSWITH, self::CONTAINS
-                => sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value)),
-            default => join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]), 
-        };
+        switch ($this->operator) {
+            case self::STARTSWITH:
+            case self::ENDSWITH:
+            case self::CONTAINS:
+                return sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value));
+            
+            default:
+                return join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]);
+        }
     }
 
     public function encodeODataValue($value): string {
@@ -175,17 +177,17 @@ class Expression
         return self::lesserThan($field, $value, true);
     }
 
-    public static function startsWith(string $field, mixed $value): Expression
+    public static function startsWith(string $field, $value): Expression
     {
         return new Expression($field, self::STARTSWITH, $value);
     }
 
-    public static function endsWith(string $field, mixed $value): Expression
+    public static function endsWith(string $field, $value): Expression
     {
         return new Expression($field, self::ENDSWITH, $value);
     }
 
-    public static function contains(string $field, mixed $value): Expression
+    public static function contains(string $field, $value): Expression
     {
         return new Expression($field, self::CONTAINS, $value);
     }
