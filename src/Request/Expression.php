@@ -127,14 +127,24 @@ readonly class Expression
         return new Expression($field, self::NE, $value);
     }
 
-    public static function greaterThan(string $field, mixed $value): Expression
+    public static function greaterThan(string $field, mixed $value, bool $includeEqual = false): Expression
     {
-        return new Expression($field, self::GT, $value);
+        return new Expression($field, $includeEqual ? self::GE : self::GT, $value);
     }
-    
-    public static function lesserThan(string $field, mixed $value): Expression
+
+    public static function greaterOrEqualThan(string $field, mixed $value): Expression
     {
-        return new Expression($field, self::GT, $value);
+        return self::greaterThan($field, $value, true);
+    }
+
+    public static function lesserThan(string $field, mixed $value, bool $includeEqual = false): Expression
+    {
+        return new Expression($field, $includeEqual ? self::LE : self::LT, $value);
+    }
+
+    public static function lesserOrEqualThan(string $field, mixed $value): Expression
+    {
+        return self::lesserThan($field, $value, true);
     }
 
     public static function and(array $expressions): string
