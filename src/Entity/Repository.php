@@ -57,6 +57,15 @@ class Repository
     }
 
     /**
+     * @return ?T
+     */
+    public function findOneBy(array $criteria, ?array $expanded = null): ?Entity
+    {
+        $result = $this->findBy($criteria, expanded: $expanded);
+        return !empty($result) ? $result[0] : null;
+    }
+
+    /**
      * @return T[]
      */
     public function findAll($orderBy = null, ?array $expanded = null): array
@@ -93,7 +102,7 @@ class Repository
     }
 
     /**
-     * @return T
+     * @return ?T
      */
     public function get(string $primaryKey, ?array $expanded = null): ?Entity
     {
@@ -116,7 +125,7 @@ class Repository
     }
 
     /**
-     * @return T
+     * @return ?T
      */
     public function find(string $primaryKey, ?array $expanded = null): ?Entity
     {

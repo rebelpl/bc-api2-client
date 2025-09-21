@@ -88,6 +88,12 @@ $response = $client->call($request);
 ### Use Repository / Entity helpers
 
 ```php
+# find a single customer
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'customers');
+if ($customer = $repository->findOneBy([ 'number' => 'CU-TEST' ])) {
+    echo " - {$customer->get('number')}:\t{$customer->get('displayName')} @ {$customer->get('country')} ({$customer->get('id')})\n";
+}
+
 # find sales orders based on given criteria
 $repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
 $repository->setExpandedByDefault([ 'salesOrderLines' ]);

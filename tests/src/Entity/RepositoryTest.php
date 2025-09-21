@@ -132,4 +132,14 @@ class RepositoryTest extends TestCase
         $this->assertInstanceOf(Entity::class, $addresses[0]);
         $this->assertEquals('196238', $addresses[0]->get('code'));
     }
+    
+    public function testFindOneBy()
+    {
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/customers.json')));
+
+        $repository = new Repository($this->client, 'customers');
+        $result = $repository->findOneBy([ 'number' => 'CU-TEST' ]);
+        $this->assertInstanceOf(Entity::class, $result);
+    }
 }
