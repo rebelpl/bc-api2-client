@@ -139,7 +139,7 @@ class Expression
         return new Expression($field, $includeEqual ? self::GE : self::GT, $value);
     }
 
-    public static function greaterOrEqualThan(string $field, mixed $value): Expression
+    public static function greaterOrEqualThan(string $field, $value): Expression
     {
         return self::greaterThan($field, $value, true);
     }
@@ -149,7 +149,7 @@ class Expression
         return new Expression($field, $includeEqual ? self::LE : self::LT, $value);
     }
 
-    public static function lesserOrEqualThan(string $field, mixed $value): Expression
+    public static function lesserOrEqualThan(string $field, $value): Expression
     {
         return self::lesserThan($field, $value, true);
     }
