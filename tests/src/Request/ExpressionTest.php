@@ -8,7 +8,6 @@ class ExpressionTest extends TestCase
 {
     public function testSimpleExpressions()
     {
-
         $expression = new Expression('amount', '>', 512.99);
         $this->assertEquals("amount gt 512.99", (string)$expression);
 
@@ -27,7 +26,19 @@ class ExpressionTest extends TestCase
 
         $expression = new Expression('pricesIncludeTax', Expression::EQ, true);
         $this->assertEquals("pricesIncludeTax eq true", (string)$expression);
+    }
 
+    public function testStaticConstructors()
+    {
+        $expression = Expression::greaterOrEqualThan('amount', 512.99);
+        $this->assertEquals("amount ge 512.99", (string)$expression);
+
+        $expression = Expression::lesserThan('amount', 512.99);
+        $this->assertEquals("amount lt 512.99", (string)$expression);
+    }
+
+    public function testComplexExpressions()
+    {
         $expression = Expression::and([
             Expression::or([
                 new Expression('a', 'eq',  'b'),
@@ -35,7 +46,7 @@ class ExpressionTest extends TestCase
             ]),
             Expression::equals('foo', 'bar'),
         ]); 
-            ;
+        
         $this->assertEquals("(a eq 'b' or a eq 'c') and foo eq 'bar'", $expression);
 
         $expression = Expression::in('customerNo', [ 'CU-TEST', 'CU-ANOTHER' ]);
