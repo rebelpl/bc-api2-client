@@ -18,7 +18,7 @@ class Repository
     /** @var string */
     protected $entityClass = Entity::class;
     private $baseUrl;
-    private array $expandedByDefault = [];
+    private $expandedByDefault = [];
 
     /**
      * @param class-string<T> $entityClass
@@ -50,7 +50,7 @@ class Repository
         return $this->baseUrl;
     }
     
-    public function setExpandedByDefault(array $expanded): static
+    public function setExpandedByDefault(array $expanded): self
     {
         $this->expandedByDefault = $expanded;
         return $this;
@@ -61,7 +61,7 @@ class Repository
      */
     public function findOneBy(array $criteria, ?array $expanded = null): ?Entity
     {
-        $result = $this->findBy($criteria, expanded: $expanded);
+        $result = $this->findBy($criteria, null, null, null, $expanded);
         return !empty($result) ? $result[0] : null;
     }
 
