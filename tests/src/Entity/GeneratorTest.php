@@ -1,6 +1,7 @@
 <?php
 namespace Rebel\Test\BCApi2\Entity;
 
+use Carbon\Carbon;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Entity\Generator;
 use Rebel\BCApi2\Metadata;
@@ -17,6 +18,16 @@ class GeneratorTest extends TestCase
         $this->generator = new Generator($this->metadata);
     }
     
+    public function testDateAndDateTimePropertiesHaveCorrectTypes(): void
+    {
+        $entityType = $this->metadata->getEntityType('salesOrder');
+        $classType = $this->generator->generateRecordFor($entityType, true);
+
+        $property = $classType->getProperty('orderDate');
+        $this->assertEquals(Carbon::class, $property->getType());
+        $this->assertTrue($property->isNullable());
+    }
+    
     public function testDateAndDateTimePropertiesHaveCorrectSetters(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
@@ -29,9 +40,18 @@ class GeneratorTest extends TestCase
         $property = $classType->getProperty('lastModifiedDateTime');
         $setHook = $property->getHook('set');
         $this->assertStringContainsString('setAsDateTime(', $setHook->getBody());
-
     }
-    
+
+    public function testDateAndDateTimePropertiesHaveCorrectGetters(): void
+    {
+        $entityType = $this->metadata->getEntityType('salesOrder');
+        $classType = $this->generator->generateRecordFor($entityType, true);
+
+        $property = $classType->getProperty('orderDate');
+        $setHook = $property->getHook('get');
+        $this->assertStringContainsString('getAsDateTime(', $setHook->getBody());
+    }
+
     public function setHookDoesNotExistForIDProperty(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
