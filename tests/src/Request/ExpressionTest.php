@@ -35,6 +35,12 @@ class ExpressionTest extends TestCase
 
         $expression = Expression::lesserThan('amount', 512.99);
         $this->assertEquals("amount lt 512.99", (string)$expression);
+        
+        $expression = Expression::in('customerNo', [ 'CU-TEST', 'CU-ANOTHER' ]);
+        $this->assertEquals("(customerNo eq 'CU-TEST' or customerNo eq 'CU-ANOTHER')", (string)$expression);
+
+        $expression = Expression::notIn('orderNo', [ 'ZS-TEST', 'ZS-ANOTHER' ]);
+        $this->assertEquals("orderNo ne 'ZS-TEST' and orderNo ne 'ZS-ANOTHER'", (string)$expression);
     }
 
     public function testComplexExpressions()
@@ -48,8 +54,5 @@ class ExpressionTest extends TestCase
         ]); 
         
         $this->assertEquals("(a eq 'b' or a eq 'c') and foo eq 'bar'", $expression);
-
-        $expression = Expression::in('customerNo', [ 'CU-TEST', 'CU-ANOTHER' ]);
-        $this->assertEquals("(customerNo eq 'CU-TEST' or customerNo eq 'CU-ANOTHER')", (string)$expression);
     }
 }

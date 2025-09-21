@@ -73,13 +73,13 @@ class Expression
         if (is_array($this->value)) {
             switch ($this->operator) {
                 case self::IN:
-                    return self::or(array_map(function ($val) {
-                        return self::equals($this->field, $val);
+                    return self::or(array_map(function ($value) {
+                        return self::equals($this->field, $value);
                     }, $this->value));
                 case self::NI:
-                    return '(' . self::and(array_map(function ($val) {
-                            return self::notEquals($this->field, $val);
-                        }, $this->value)) . ')';
+                    return self::and(array_map(function ($value) {
+                            return self::notEquals($this->field, $value);
+                        }, $this->value));
                 default:
                     return '';
             }
@@ -121,7 +121,7 @@ class Expression
 
     public static function notIn(string $field, array $values): Expression
     {
-        return new Expression($field, self::IN, $values);
+        return new Expression($field, self::NI, $values);
     }
 
     public static function equals(string $field, $value): Expression
@@ -152,6 +152,21 @@ class Expression
     public static function lesserOrEqualThan(string $field, $value): Expression
     {
         return self::lesserThan($field, $value, true);
+    }
+
+    public static function startswith(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::STARTSWITH, $value);
+    }
+
+    public static function endswith(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::ENDSWITH, $value);
+    }
+
+    public static function contains(string $field, mixed $value): Expression
+    {
+        return new Expression($field, self::CONTAINS, $value);
     }
 
     public static function and(array $expressions): string
