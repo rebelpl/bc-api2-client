@@ -226,6 +226,7 @@ class Generator
     protected function generateRecordPropertyGetMethod(string $name, string $phpType): PhpGenerator\Method
     {
         $method = new PhpGenerator\Method('get' . ucfirst($name));
+        $method->setReturnNullable();
 
         // datetime types
         if ($phpType === \DateTime::class) {
@@ -255,7 +256,9 @@ class Generator
 
         $method = new PhpGenerator\Method('set' . ucfirst($name));
         $method->setParameters([
-            (new PhpGenerator\Parameter('value'))->setType($phpType),
+            (new PhpGenerator\Parameter('value'))
+                ->setType($phpType)
+                ->setNullable(),
         ]);
         $method->setReturnType('self');
 

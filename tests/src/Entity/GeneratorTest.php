@@ -22,16 +22,6 @@ class GeneratorTest extends TestCase
         $this->generator = new Generator($this->metadata);
     }
     
-    public function testDateAndDateTimePropertiesHaveCorrectTypes(): void
-    {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
-
-        $property = $classType->getProperty('orderDate');
-        $this->assertEquals(Carbon::class, $property->getType());
-        $this->assertTrue($property->isNullable());
-    }
-    
     public function testDateAndDateTimePropertiesHaveCorrectSetters(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
@@ -42,6 +32,10 @@ class GeneratorTest extends TestCase
 
         $setMethod = $classType->getMethod('setLastModifiedDateTime');
         $this->assertStringContainsString('setAsDateTime(', $setMethod->getBody());
+        
+        $param = $setMethod->getParameters()['value'];
+        $this->assertEquals(\DateTime::class, $param->getType());
+        $this->assertTrue($param->isNullable());
     }
 
     public function testDateAndDateTimePropertiesHaveCorrectGetters(): void
@@ -49,9 +43,10 @@ class GeneratorTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
 
-        $property = $classType->getProperty('orderDate');
-        $setHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsDateTime(', $setHook->getBody());
+        $getMethod = $classType->getMethod('getOrderDate');
+        $this->assertStringContainsString('getAsDateTime(', $getMethod->getBody());
+        $this->assertTrue($getMethod->isReturnNullable());
+        $this->assertEquals(Carbon::class, $getMethod->getReturnType());
     }
 
     public function setHookDoesNotExistForIDProperty(): void
