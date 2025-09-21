@@ -14,8 +14,6 @@ class Expression
     const 
         EQ = 'eq',  // Equal to
         NE = 'ne',  // Not equal to
-        IN = 'in',  // In
-        NI = 'ni',  // Not in
         GT = 'gt',  // Greater than
         GE = 'ge',  // Greater than or equal to
         LT = 'lt',  // Lesser than
@@ -55,6 +53,8 @@ class Expression
         '<' => self::LT,
         '=<' => self::LE,
         '<=' => self::LE,
+        'in' => self::EQ,
+        'ni' => self::NE,
     ];
 
     private $field;
@@ -72,20 +72,41 @@ class Expression
     {
         if (is_array($this->value)) {
             switch ($this->operator) {
-                case self::IN:
+                case self::EQ:
                     return self::or(array_map(function ($value) {
                         return self::equals($this->field, $value);
                     }, $this->value));
-                case self::NI:
+                    
+                case self::NE:
                     return self::and(array_map(function ($value) {
                             return self::notEquals($this->field, $value);
                         }, $this->value));
+
+                case self::STARTSWITH:
+                    return self::or(array_map(function ($value) {
+                        return self::startsWith($this->field, $value);
+                    }, $this->value));
+
+                case self::ENDSWITH:
+                    return self::or(array_map(function ($value) {
+                        return self::endsWith($this->field, $value);
+                    }, $this->value));
+
+                case self::CONTAINS:
+                    return self::or(array_map(function ($value) {
+                        return self::contains($this->field, $value);
+                    }, $this->value));
+
                 default:
                     return '';
             }
         }
-        
-        return join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]);
+
+        return match ($this->operator) {
+            self::STARTSWITH, self::ENDSWITH, self::CONTAINS
+                => sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value)),
+            default => join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]), 
+        };
     }
 
     public function encodeODataValue($value): string {
@@ -116,12 +137,12 @@ class Expression
 
     public static function in(string $field, array $values): Expression
     {
-        return new Expression($field, self::IN, $values);
+        return self::equals($field, $values);
     }
 
     public static function notIn(string $field, array $values): Expression
     {
-        return new Expression($field, self::NI, $values);
+        return self::notEquals($field, $values);
     }
 
     public static function equals(string $field, $value): Expression
@@ -154,12 +175,12 @@ class Expression
         return self::lesserThan($field, $value, true);
     }
 
-    public static function startswith(string $field, mixed $value): Expression
+    public static function startsWith(string $field, mixed $value): Expression
     {
         return new Expression($field, self::STARTSWITH, $value);
     }
 
-    public static function endswith(string $field, mixed $value): Expression
+    public static function endsWith(string $field, mixed $value): Expression
     {
         return new Expression($field, self::ENDSWITH, $value);
     }
