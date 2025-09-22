@@ -159,26 +159,12 @@ class Entity
             return $this->getAsDateTime($property);
         }
 
-//        if (is_a($cast, \BackedEnum::class, true)) {
-//            return $this->getAsEnum($property, $cast);
-//        }
-
         return $value;
     }
 
     public function getAsCollection(string $property): Collection
     {
         return $this->expanded[ $property ] ?? $this->expanded[ $property ] = new Collection();
-    }
-
-    public function getAsEnum(string $property, string $enumClass)
-    {
-        $value = $this->data[ $property ] ?? null;
-        if (is_null($value)) {
-            return null;
-        }
-
-        return call_user_func([ $enumClass, 'tryFrom' ], $value);
     }
     
     public function getAsDateTime(string $property): ?Carbon

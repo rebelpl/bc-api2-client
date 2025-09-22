@@ -23,23 +23,18 @@ class GeneratorTest extends TestCase
         $this->generator = new Generator($this->metadata);
     }
     
-    public function testDateAndDateTimePropertiesHaveCorrectSetters(): void
-    {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
     public function testDateAndDateTimePropertiesAreCorrect(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
 
-        $property = $classType->getProperty('orderDate');
-        $this->assertEquals(Carbon::class, $property->getType());
-        $this->assertTrue($property->isNullable());
+        $getMethod = $classType->getMethod('getOrderDate');
+        $this->assertStringContainsString('getAsDate(', $getMethod->getBody());
+        $this->assertEquals(Carbon::class, $getMethod->getReturnType());
+        $this->assertTrue($getMethod->isReturnNullable());
 
         $setMethod = $classType->getMethod('setOrderDate');
         $this->assertStringContainsString('setAsDate(', $setMethod->getBody());
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDate(', $setHook->getBody());
 
         $setMethod = $classType->getMethod('setLastModifiedDateTime');
         $this->assertStringContainsString('setAsDateTime(', $setMethod->getBody());
@@ -47,13 +42,6 @@ class GeneratorTest extends TestCase
         $param = $setMethod->getParameters()['value'];
         $this->assertEquals(\DateTime::class, $param->getType());
         $this->assertTrue($param->isNullable());
-        $property = $classType->getProperty('lastModifiedDateTime');
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDateTime(', $setHook->getBody());
-        
-        $property = $classType->getProperty('orderDate');
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsDate(', $getHook->getBody());
     }
 
     public function testCollectionNavPropertiesAreCorrect(): void
@@ -61,29 +49,22 @@ class GeneratorTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
 
-        $getMethod = $classType->getMethod('getOrderDate');
-        $this->assertStringContainsString('getAsDateTime(', $getMethod->getBody());
-        $this->assertTrue($getMethod->isReturnNullable());
-        $this->assertEquals(Carbon::class, $getMethod->getReturnType());
-        $property = $classType->getProperty('salesOrderLines');
-        $this->assertEquals(Entity\Collection::class, $property->getType());
-        $this->assertFalse($property->isNullable());
-        
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsCollection(', $getHook->getBody());
+        $getMethod = $classType->getMethod('getSalesOrderLines');
+        $this->assertEquals(Entity\Collection::class, $getMethod->getReturnType());
+        $this->assertFalse($getMethod->isReturnNullable());
+
+        $this->assertStringContainsString('getAsCollection(', $getMethod->getBody());
     }
 
     public function testSingleNavPropertiesAreCorrect(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
-        
-        $property = $classType->getProperty('customer');
-        $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $property->getType());
-        $this->assertTrue($property->isNullable());
 
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(', $getHook->getBody());
+        $getMethod = $classType->getMethod('getCustomer');
+        $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $getMethod->getReturnType());
+        $this->assertTrue($getMethod->isReturnNullable());
+        $this->assertStringContainsString('get(', $getMethod->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void
@@ -91,20 +72,16 @@ class GeneratorTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
 
-        $property = $classType->getProperty('status');
-        $this->assertEquals('Rebel\\BCApi2\\Entity\\Enums\\SalesOrderEntityBufferStatus', $property->getType());
-        $this->assertTrue($property->isNullable());
-
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsEnum(', $getHook->getBody());
+        $getMethod = $classType->getMethod('getStatus');
+        $this->assertEquals('string', $getMethod->getReturnType());
+        $this->assertTrue($getMethod->isReturnNullable());
+        $this->assertStringContainsString('get(', $getMethod->getBody());
     }
 
-    public function setHookDoesNotExistForIDProperty(): void
+    public function setMethodDoesNotExistForIDProperty(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
-        
-        $this->assertInstanceOf(Method::class, $classType->getMethod('setId'));
         $this->assertNull($classType->getMethod('setId'));
     }
 }

@@ -84,7 +84,6 @@ $request = new Rebel\BCApi2\Request('PATCH', 'companies(123456)/items(32d80403)'
 $response = $client->call($request);
 ```
 
-
 ### Use Repository / Entity helpers
 
 ```php
@@ -169,7 +168,6 @@ $salesOrder = $repository->get('abc-123', [ 'salesOrderLines' ]);
 
 // Update properties of the sales order
 $salesOrder->set('externalDocumentNumber', 'TEST');
-
 $salesLines = $salesOrder->get('salesOrderLines'); 
 
 // Update existing line
@@ -196,11 +194,11 @@ curl -X GET "https://api.businesscentral.dynamics.com/v2.0/<environment>/api/<ap
 ### Generate Entity models for your API
 ```php
 # fetch Metadata from BC...
-$metadata = new Rebel\BCApi2\Client(
+$metadata = (new Rebel\BCApi2\Client(
     $token->getToken(),
     'sandbox',
     '/foo/bar/v1.0'
-)->getMetadata();
+))->getMetadata();
 
 # ... or from the local file
 $metadata = Rebel\BCApi2\Metadata\Factory::fromString(file_get_contents('files/metadata.xml'));

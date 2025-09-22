@@ -15,9 +15,9 @@ echo $repository->getBaseUrl() . "\n";
 
 // find some Sales Orders
 /** @var SalesOrder\Record $salesOrder */
-$salesOrders = $repository->findBy([], 'orderDate DESC', 5, expanded: [ 'salesOrderLines', 'customer' ]);
+$salesOrders = $repository->findBy([], 'orderDate DESC', 5, null, [ 'salesOrderLines', 'customer' ]);
 foreach ($salesOrders as $salesOrder) {
-    echo ' - ' . $salesOrder->number . " @ " . $salesOrder->orderDate->toDateString() . ": " . $salesOrder->totalAmountIncludingTax . ' ' . $salesOrder->currencyCode . ' (' . $salesOrder->status->name . ")\n";
+    echo ' - ' . $salesOrder->getNumber() . " @ " . $salesOrder->getOrderDate()->toDateString() . ": " . $salesOrder->getTotalAmountIncludingTax() . ' ' . $salesOrder->getCurrencyCode() . ' (' . $salesOrder->getStatus() . ")\n";
 }
 
 // create a Sales Order
@@ -26,25 +26,26 @@ $salesOrder = new SalesOrder\Record([
     "customerNumber" => "NA0007",
 ], [ 'salesOrderLines' ]);
 
-$salesOrder->salesOrderLines[] = new SalesOrderLine\Record([
+$salesLines = $salesOrder->getSalesOrderLines();
+$salesLines[] = new SalesOrderLine\Record([
     "sequence" => 10000,
     "itemId" => "b3c285a5-f12b-f011-9a4a-7c1e5275406f",
     "quantity" => 10,
 ]);
 
-$salesOrder->salesOrderLines[] = new SalesOrderLine\Record([
+$salesLines[] = new SalesOrderLine\Record([
     "lineType" => "Item",
     "lineObjectNumber" => "1120",
     "quantity" => 20
 ]);
 
 $repository->create($salesOrder);
-echo 'CREATED: ' . $salesOrder->number . " @ " . $salesOrder->orderDate->toDateString() . ": " . $salesOrder->totalAmountIncludingTax . ' ' . $salesOrder->currencyCode . ' (' . $salesOrder->status->name . ")\n";
+echo 'CREATED: ' . $salesOrder->getNumber() . " @ " . $salesOrder->getOrderDate()->toDateString() . ": " . $salesOrder->getTotalAmountIncludingTax() . ' ' . $salesOrder->getCurrencyCode() . ' (' . $salesOrder->getStatus() . ")\n";
 
 // get the created Sales Order
-$salesOrder = $repository->get($salesOrder->id, [ 'salesOrderLines', 'customer' ]);
-echo 'RETRIEVED: ' . $salesOrder->number . " @ " . $salesOrder->orderDate->toDateString() . ": " . $salesOrder->totalAmountIncludingTax . ' ' . $salesOrder->currencyCode . ' (' . $salesOrder->status->name . ")\n";
+$salesOrder = $repository->get($salesOrder->getId(), [ 'salesOrderLines', 'customer' ]);
+echo 'RETRIEVED: ' . $salesOrder->getNumber() . " @ " . $salesOrder->getOrderDate()->toDateString() . ": " . $salesOrder->getTotalAmountIncludingTax() . ' ' . $salesOrder->getCurrencyCode() . ' (' . $salesOrder->getStatus() . ")\n";
 
 // delete the Sales Order
 $repository->delete($salesOrder);
-echo 'DELETED: ' . $salesOrder->number . "\n";
+echo 'DELETED: ' . $salesOrder->getNumber() . "\n";
