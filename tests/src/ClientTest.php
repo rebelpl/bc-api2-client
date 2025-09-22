@@ -61,20 +61,24 @@ class ClientTest extends TestCase
 
     public function testGetCompanyUrl()
     {
-        $this->assertEquals('companies(test-company-id)', $this->client->getCompanyPath());
+        $this->assertEquals('/companies(test-company-id)', $this->client->getCompanyPath());
     }
 
     public function testBuildUri(): void
     {
         $this->assertEquals(
             'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/companies',
-            (string)$this->client->buildUri('companies'));
+            (string)$this->client->buildUri('/companies'));
+
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/companies',
+            (string)$this->client->buildUri('https://api.businesscentral.dynamics.com/v2.0/test-env/api/foo/bar/v1.5/companies'));
     }
 
     public function testCall()
     {
         $this->mockResponse->append(new Response(Client::HTTP_OK));
-        $request = new Request('GET', 'companies(xxxx)/salesOrders?$top=5');
+        $request = new Request('GET', '/companies(xxxx)/salesOrders?$top=5');
         $this->client->call($request);
 
         $lastRequest = $this->getLastRequest();

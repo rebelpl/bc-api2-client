@@ -74,12 +74,16 @@ class Client
             throw new Exception('You cannot call company resources without valid companyId. Run getCompanies() to obtain a list of companies.');
         }
 
-        return "companies($this->companyId)";
+        return "/companies($this->companyId)";
     }
 
-    public function buildUri(string $resource): Psr7\Uri
+    public function buildUri(string $uri): Psr7\Uri
     {
-        return new Psr7\Uri($this->baseUrl . $this->apiRoute . '/' . ltrim($resource, '/'));
+        if (str_starts_with($uri, $this->baseUrl)) {
+            return new Psr7\Uri($uri);
+        }
+        
+        return new Psr7\Uri($this->baseUrl . $this->apiRoute . '/' . ltrim($uri, '/'));
     }
 
     public function get(string $uri): ?Psr7\Response
@@ -108,9 +112,9 @@ class Client
         return $this->call($request);
     }
 
-    public function call(Request $request): ?Psr7\Response
+    public function call(Psr7\Request $request): ?Psr7\Response
     {
-        # echo $this->buildUri($request->getUri()) . "\n";
+        # echo $request->getUri() . "\n";
         $request = $request
             ->withUri($this->buildUri($request->getUri()))
             ->withHeader('Authorization', 'Bearer ' . $this->accessToken);

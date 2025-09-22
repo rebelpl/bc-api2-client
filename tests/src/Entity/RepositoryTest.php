@@ -62,7 +62,7 @@ class RepositoryTest extends TestCase
     public function testGetBaseUrl()
     {
         $repository = new Repository($this->client, 'salesInvoices');
-        $this->assertEquals('companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
+        $this->assertEquals('/companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
     }
 
     public function testGetSalesOrders()
@@ -139,7 +139,11 @@ class RepositoryTest extends TestCase
             file_get_contents('tests/files/customers.json')));
 
         $repository = new Repository($this->client, 'customers');
-        $result = $repository->findOneBy([ 'number' => 'CU-TEST' ]);
+        $result = $repository->findOneBy([]);
         $this->assertInstanceOf(Entity::class, $result);
+
+        $lastRequest = $this->getLastRequest();
+        $this->assertEquals('$top=1',
+            urldecode($lastRequest->getUri()->getQuery()));
     }
 }

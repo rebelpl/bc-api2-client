@@ -20,7 +20,7 @@ class EntityTest extends TestCase
 
         $contents = json_decode(file_get_contents('tests/files/salesOrders.json'), true);
         foreach ($contents['value'] as $data) {
-            $this->salesOrders[] = new Entity($data, [ 'customer', 'salesOrderLines' ]);
+            $this->salesOrders[] = new Entity($data, [ 'customer', 'salesOrderLines', 'pdfDocument' ]);
         }
     }
 
@@ -49,6 +49,36 @@ class EntityTest extends TestCase
         $this->customer->get('notExistingProperty');
     }
 
+    public function testGetSingleNavProperty(): void
+    {
+        $salesOrder = $this->salesOrders[0];
+        $customer = $salesOrder->get('customer');
+        $this->assertInstanceOf(Entity::class, $customer);
+        $this->assertEquals('Jan Ubezpieczenia S.A.', $customer->get('displayName'));
+    }
+
+    public function testGetAsStream(): void
+    {
+        $salesOrder = $this->salesOrders[0];
+        $pdfDocument = $salesOrder->get('pdfDocument');
+        $this->assertInstanceOf(Entity::class, $pdfDocument);
+        $this->assertEquals($salesOrder->getPrimaryKey(), $pdfDocument->get('parentId'));
+        
+        $content = $pdfDocument->get('pdfDocumentContent');
+        $this->assertInstanceOf(Entity\DataStream::class, $content);
+        $this->assertEquals(
+            'https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/companies(3ab5c248-e72b-f011-9a4a-7c1e5275406f)/salesOrders(848028e0-0c2c-f011-9a4a-7ced8d0fb545)/pdfDocument/pdfDocumentContent', 
+            $content->getUrl());
+    }
+
+    public function testGetCollectionNavProperty(): void
+    {
+        $salesOrder = $this->salesOrders[0];
+        $salesOrderLines = $salesOrder->getAsCollection('salesOrderLines');
+        $this->assertInstanceOf(Entity\Collection::class, $salesOrderLines);
+        $this->assertCount(1, $salesOrderLines);
+    }
+
     public function testSetDateAndTime(): void
     {
         $salesOrder = $this->salesOrders[0];
@@ -65,7 +95,7 @@ class EntityTest extends TestCase
     public function testToUpdate(): void
     {
         $this->assertEquals([], $this->customer->toUpdate());
-        $this->customer->set([
+        $this->customer->loadData([
             'taxLiable' => 'true',
             'displayName' => 'John Doe',
         ]);

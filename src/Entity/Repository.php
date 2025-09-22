@@ -37,7 +37,7 @@ class Repository
 
         $this->baseUrl = $isCompanyResource
             ? $this->client->getCompanyPath() . '/' . $entitySetName
-            : $entitySetName;
+            : '/' . $entitySetName;
     }
 
     public function getEntityClass(): string
@@ -61,7 +61,7 @@ class Repository
      */
     public function findOneBy(array $criteria, ?array $expanded = null): ?Entity
     {
-        $result = $this->findBy($criteria, null, null, null, $expanded);
+        $result = $this->findBy($criteria, null, 1, null, $expanded);
         return !empty($result) ? $result[0] : null;
     }
 
