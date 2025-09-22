@@ -13,7 +13,7 @@ class UriBuilder
         string $resourceUrl,
         private ?string $primaryKey = null)
     {
-        $this->resourceUrl = trim($resourceUrl, '/');
+        $this->resourceUrl = rtrim($resourceUrl, '/');
     }
 
     public function get($primaryKey): self

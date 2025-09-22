@@ -88,7 +88,7 @@ class Repository
         $entities = [];
         $data = json_decode($response->getBody(), true);
         foreach ($data['value'] as $result) {
-            $entities[] = $this->hydrate($result, $expanded, $data[ Entity::ODATA_CONTEXT ]);
+            $entities[] = $this->hydrate($result, $expanded);
         }
 
         return $entities;
@@ -240,8 +240,10 @@ class Repository
         }
     }
 
-    private function hydrate(array $data, array $expanded, ?string $context = null): Entity
+    private function hydrate(array $data, array $expanded): Entity
     {
-        return new $this->entityClass($data, array_is_list($expanded) ? $expanded : array_keys($expanded), $context);
+        return new $this->entityClass($data,
+            array_is_list($expanded) ? $expanded : array_keys($expanded),
+            $this->baseUrl);
     }
 }

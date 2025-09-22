@@ -77,6 +77,15 @@ class Factory
             $metadata->addEntitySet(new EntitySet($name, $entityType, $capabilities));
         }
 
+        // Extract BoundActions
+        $boundActions = $xml->xpath('//edm:Schema/edm:Action');
+        foreach ($boundActions as $boundAction) {
+            $name = (string)$boundAction['Name'];
+            $type = (string)$boundAction->Parameter['Type'];
+            $entityType = $metadata->getEntityType($type, true);
+            $metadata->addBoundAction(new BoundAction($name, $entityType));
+        }
+
         return $metadata;
     }
 

@@ -88,4 +88,14 @@ class GeneratorTest extends TestCase
         $setHook = $property->getHook('set');
         $this->assertNull($setHook);
     }
+    
+    public function testBoundActionsAreCorrect(): void
+    {
+        $entityType = $this->metadata->getEntityType('salesOrder');
+        $classType = $this->generator->generateRecordFor($entityType, true);
+        
+        $method = $classType->getMethod('doShipAndInvoice');
+        $this->assertEquals('void', $method->getReturnType());
+        $this->assertStringContainsString("doAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
+    }
 }

@@ -24,7 +24,10 @@ class Entity
 
     public readonly ?string $context;
 
-    public function __construct(protected array $data = [], array $expanded = [], ?string $context = null)
+    public function __construct(
+        protected array $data = [],
+        array $expanded = [],
+        ?string $context = null)
     {
         foreach ($expanded as $name) {
             if ($name instanceof \UnitEnum) $name = $name->name;
@@ -92,11 +95,17 @@ class Entity
                 continue;
             }
 
+            if ($property === self::ODATA_CONTEXT) {
+                continue;
+            }
+            
             $this->set($property, $value);
         }
 
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
+            unset($data[ Entity::ODATA_ETAG ]);
+            $this->primaryKey = array_key_first($data);
         }
     }
 
@@ -281,5 +290,18 @@ class Entity
         }
 
         return $changes;
+    }
+    
+    public function doAction(string $name, Client $client): void
+    {
+        if (empty($this->context) || empty($this->getPrimaryKey())) {
+            throw new Exception\MissingEntityContext($this);
+        }
+        
+        $url = new Request\UriBuilder($this->context, $this->getPrimaryKey())->include($name); 
+        $response = $client->post($url, '');
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
     }
 }

@@ -14,6 +14,9 @@ class Metadata
 
     /** @var array<string, array<int, string>> */
     private array $enumTypes = [];
+    
+    /** @var array<Metadata\BoundAction> */
+    private array $boundActions = [];
 
     public function __construct(private readonly string $namespace)
     {
@@ -69,6 +72,27 @@ class Metadata
     public function addEntitySet(Metadata\EntitySet $entitySet): void
     {
         $this->entitySets[ $entitySet->getName() ] = $entitySet;
+    }
+    
+    public function addBoundAction(Metadata\BoundAction $boundAction): void
+    {
+        $this->boundActions[] = $boundAction;
+    }
+
+    /**
+     * @return array<Metadata\BoundAction[]>
+     */
+    public function getBoundActions(): array
+    {
+        return $this->boundActions;
+    }
+
+    /**
+     * @return array<Metadata\BoundAction>
+     */
+    public function getBoundActionsFor(string $name): array
+    {
+        return array_filter($this->boundActions, fn($boundAction) => $boundAction->getEntityType()->getName() === $name);
     }
 
     /**

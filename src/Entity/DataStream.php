@@ -2,8 +2,6 @@
 namespace Rebel\BCApi2\Entity;
 
 use Rebel\BCApi2\Client;
-use GuzzleHttp\Psr7;
-use Rebel\BCApi2\Request;
 use Rebel\BCApi2\Exception;
 
 readonly class DataStream
@@ -26,11 +24,7 @@ readonly class DataStream
 
     public function uploadWith(Client $client, string $data, ?string $etag = null): void
     {
-        $response = $client->call(
-            new Psr7\Request('PATCH', $this->url, array_filter([
-                Request::HEADER_ETAG => $etag,
-                'Content-Type' => 'application/octet-stream'
-            ]), $data));
+        $response = $client->patch($this->url, $data, $etag);
         if ($response->getStatusCode() !== Client::HTTP_NO_CONTENT) {
             throw new Exception\InvalidResponseException($response);
         }
