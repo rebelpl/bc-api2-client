@@ -120,7 +120,14 @@
           "itemVariantId": "00000000-0000-0000-0000-000000000000",
           "locationId": "baccf134-0d2c-f011-9a4a-7ced8d0fb545"
         }
-      ]
+      ],
+      "pdfDocument": {
+        "@odata.etag": "W/\"JzE5OzEzNzUwMzgzNjU2NDQ5MjQwNDIxOzAwOyc=\"",
+        "id": "848028e0-0c2c-f011-9a4a-7ced8d0fb545",
+        "parentId": "848028e0-0c2c-f011-9a4a-7ced8d0fb545",
+        "parentType": "Sales_x0020_Order",
+        "pdfDocumentContent@odata.mediaReadLink": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/companies(3ab5c248-e72b-f011-9a4a-7c1e5275406f)/salesOrders(848028e0-0c2c-f011-9a4a-7ced8d0fb545)/pdfDocument/pdfDocumentContent"
+      }
     },
     {
       "@odata.etag": "W/\"JzIwOzE1MTYxMDAyNjMyOTMyMDkwNTg1MTswMDsn\"",
@@ -241,7 +248,14 @@
           "itemVariantId": "00000000-0000-0000-0000-000000000000",
           "locationId": "8cdf8f99-f12b-f011-9a4a-7c1e5275406f"
         }
-      ]
+      ],
+      "pdfDocument": {
+        "@odata.etag": "W/\"JzE5OzEzNzUwMzgzNjU2NDQ5MjQwNDIxOzAwOyc=\"",
+        "id": "ee3724a7-112c-f011-9a4a-7c1e5275406f",
+        "parentId": "ee3724a7-112c-f011-9a4a-7c1e5275406f",
+        "parentType": "Sales_x0020_Order",
+        "pdfDocumentContent@odata.mediaReadLink": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/companies(3ab5c248-e72b-f011-9a4a-7c1e5275406f)/salesOrders(ee3724a7-112c-f011-9a4a-7c1e5275406f)/pdfDocument/pdfDocumentContent"
+      }
     },
     {
       "@odata.etag": "W/\"JzIwOzExNTYwNDU1NjkxMDQ2Mzg4MTM3MTswMDsn\"",
@@ -397,7 +411,14 @@
           "itemVariantId": "00000000-0000-0000-0000-000000000000",
           "locationId": "baccf134-0d2c-f011-9a4a-7ced8d0fb545"
         }
-      ]
+      ],
+      "pdfDocument": {
+        "@odata.etag": "W/\"JzE5OzEzNzUwMzgzNjU2NDQ5MjQwNDIxOzAwOyc=\"",
+        "id": "2b77aca9-9a2c-f011-9a4a-7c1e5275406f",
+        "parentId": "2b77aca9-9a2c-f011-9a4a-7c1e5275406f",
+        "parentType": "Sales_x0020_Order",
+        "pdfDocumentContent@odata.mediaReadLink": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/companies(3ab5c248-e72b-f011-9a4a-7c1e5275406f)/salesOrders(2b77aca9-9a2c-f011-9a4a-7c1e5275406f)/pdfDocument/pdfDocumentContent"
+      }
     }
   ]
 }

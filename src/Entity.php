@@ -3,11 +3,15 @@ namespace Rebel\BCApi2;
 
 use Rebel\BCApi2\Entity\Collection;
 use Carbon\Carbon;
+use Rebel\BCApi2\Entity\DataStream;
 
 class Entity
 {
     const string ODATA_ETAG = '@odata.etag';
     const string ODATA_CONTEXT = '@odata.context';
+    const string ODATA_MEDIA_READLINK = '@odata.mediaReadLink';
+    const string ODATA_MEDIA_EDITLINK = '@odata.mediaEditLink';
+    const string NULL_GUID = '00000000-0000-0000-0000-000000000000';
 
     protected array $original = [];
     protected string $primaryKey = 'id';
@@ -45,7 +49,7 @@ class Entity
     {
         return array_key_exists($property, $this->expanded);
     }
-
+    
     protected function getClassnameFor(string $property): string
     {
         return $this->classMap[ $property ] ?? self::class;
@@ -76,12 +80,29 @@ class Entity
     public function loadData(array $data): void
     {
         foreach ($data as $property => $value) {
+            if (str_ends_with($property, self::ODATA_MEDIA_READLINK)) {
+                $property = substr($property, 0, -strlen(self::ODATA_MEDIA_READLINK));
+                $this->setAsStream($property, $value);
+                continue;
+            }
+
+            if (str_ends_with($property, self::ODATA_MEDIA_EDITLINK)) {
+                $property = substr($property, 0, -strlen(self::ODATA_MEDIA_EDITLINK));
+                $this->setAsStream($property, $value);
+                continue;
+            }
+
             $this->set($property, $value);
         }
 
-        if (!empty($this->data[ Entity::ODATA_ETAG ])) {
+        if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
         }
+    }
+
+    private function setAsStream(string $property, string $value): void
+    {
+        $this->data[ $property ] = new DataStream($value);
     }
 
     private function hydrate(string $property, mixed $value): mixed
@@ -121,7 +142,7 @@ class Entity
         }
 
         $value = $this->data[ $property ];
-        if (is_null($value) || $value === '00000000-0000-0000-0000-000000000000') {
+        if (is_null($value) || $value === self::NULL_GUID) {
             return null;
         }
 
@@ -150,7 +171,7 @@ class Entity
 
         return call_user_func([ $enumClass, 'tryFrom' ], $value);
     }
-
+    
     public function getAsDateTime(string $property): ?Carbon
     {
         $value = $this->data[ $property ] ?? null;
@@ -163,19 +184,12 @@ class Entity
 
     public function getAsDate(string $property): ?Carbon
     {
+        // it's only an alias
         return $this->getAsDateTime($property);
     }
 
-    public function set($property, mixed $value = null, ?string $cast = null): void
+    public function set(string $property, mixed $value = null, ?string $cast = null): void
     {
-        if (is_array($property)) {
-            foreach ($property as $key => $value) {
-                $this->set($key, $value);
-            }
-
-            return;
-        }
-
         if ($this->isExpandedProperty($property) || isset($this->classMap[ $property ])) {
             $this->expanded[ $property ] = $this->hydrate($property, $value);
             return;
