@@ -205,11 +205,11 @@ class Generator
     {
         $name = $action->getName();
         $prefix = $this->metadata->getNamespace();
-        return new PhpGenerator\Method('do' . ucfirst($name))
+        return (new PhpGenerator\Method('do' . ucfirst($name)))
             ->setBody("\$this->doAction('$prefix.$name', \$client);")
             ->setReturnType('void')
             ->setParameters([
-                new PhpGenerator\Parameter('client')
+                (new PhpGenerator\Parameter('client'))
                     ->setType(Client::class)
             ]);
     }

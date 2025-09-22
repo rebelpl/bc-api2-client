@@ -95,7 +95,9 @@ class Metadata
      */
     public function getBoundActionsFor(string $name): array
     {
-        return array_filter($this->boundActions, fn($boundAction) => $boundAction->getEntityType()->getName() === $name);
+        return array_filter($this->boundActions, function ($boundAction) use ($name) {
+            return $boundAction->getEntityType()->getName() === $name;
+        });
     }
 
     /**

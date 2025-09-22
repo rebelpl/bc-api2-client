@@ -102,7 +102,9 @@ class Entity
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
             unset($data[ Entity::ODATA_ETAG ]);
-            $this->primaryKey = array_key_first($data);
+            
+            reset($data);
+            $this->primaryKey = key($data);
         }
     }
 

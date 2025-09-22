@@ -1,12 +1,17 @@
 <?php
 namespace Rebel\BCApi2\Metadata;
 
-readonly class BoundAction
+class BoundAction
 {
+    private $name;
+    private $entityType;
+
     public function __construct(
-        private string $name,
-        private EntityType $entityType)
+        string $name,
+        EntityType $entityType)
     {
+        $this->entityType = $entityType;
+        $this->name = $name;
     }
     
     public function getName(): string
