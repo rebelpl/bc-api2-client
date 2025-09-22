@@ -12,5 +12,6 @@ return Client\Factory::useAuthorizationCode(
         'redirectUri' => $config['redirectUri'],
     ]),
     environment: $config['environment'],
+    apiRoute: $config['apiRoute'],
     companyId: $config['companyId'],
     tokenFilename: $config['tokenFilename']);
