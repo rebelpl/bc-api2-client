@@ -10,7 +10,7 @@ $metadata = Metadata\Factory::fromString(file_get_contents($filename));
 $generator = new Entity\Generator($metadata);
 
 $options = getopt('', [ 'entitySetName::' ]);
-if ($entitySetName = $options['entitySetName']) {
+if ($entitySetName = $options['entitySetName'] ?? null) {
     $files = $generator->generateFilesForEntitySet($entitySetName);
     $generator->saveFilesTo($files, 'build/', true);
     exit();
