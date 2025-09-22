@@ -79,4 +79,10 @@ class MetadataTest extends TestCase
         $entitySet = $this->metadata->getEntitySetFor('inventoryPostingGroup');
         $this->assertEquals('inventoryPostingGroups', $entitySet->getName());
     }
+    
+    public function testBoundActionsFor()
+    {
+        $this->assertCount(21, $this->metadata->getBoundActions());
+        $this->assertCount(6, $this->metadata->getBoundActionsFor('salesInvoice'));
+    }
 }

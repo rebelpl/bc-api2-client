@@ -137,6 +137,7 @@ class Generator
         $path = $entityName  . DIRECTORY_SEPARATOR . $class->getName();
         $files[ $path ] = $this->generateClassFile($class, $entityName, array_merge([
             Carbon::class => null,
+            Client::class => null,
             Entity::class => null,
         ], $this->generateRecordImports($entityType)));
 
@@ -179,9 +180,40 @@ class Generator
             $class->addMember($member);
         }
         
+        foreach ($this->generateRecordActions($entityType) as $classMember) {
+            $class->addMember($classMember);
+        }
+        
         return $class;
     }
 
+    /**
+     * @return PhpGenerator\Method[]
+     */
+    protected function generateRecordActions(EntityType $entityType): array
+    {
+        $classMembers = [];
+        $boundActions = $this->metadata->getBoundActionsFor($entityType->getName());
+        foreach ($boundActions as $action) {
+            $classMembers[] = $this->generateRecordActionMethod($action);
+        }
+        
+        return $classMembers;
+    }
+    
+    protected function generateRecordActionMethod(Metadata\BoundAction $action): PhpGenerator\Method
+    {
+        $name = $action->getName();
+        $prefix = $this->metadata->getNamespace();
+        return new PhpGenerator\Method('do' . ucfirst($name))
+            ->setBody("\$this->doAction('$prefix.$name', \$client);")
+            ->setReturnType('void')
+            ->setParameters([
+                new PhpGenerator\Parameter('client')
+                    ->setType(Client::class)
+            ]);
+    }
+    
     /**
      * @return (PhpGenerator\Property|PhpGenerator\Method)[]
      */

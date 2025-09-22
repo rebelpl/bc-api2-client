@@ -183,6 +183,14 @@ $salesLines[] = new Rebel\BCApi2\Entity([
 $repository->save($salesOrder);
 ```
 
+### Call bound action
+```php
+// Create a SalesOrder repository
+$repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
+$salesOrder = $repository->get('abc-123');
+$salesOrder->doAction('shipAndInvoice', $client);
+```
+
 ## Download metadata for your API
 ```shell
 curl -X GET "https://api.businesscentral.dynamics.com/v2.0/<environment>/api/<api_publisher>/<api_group>/<api_version>/$metadata" \

@@ -10,4 +10,4 @@ return Client\Factory::useClientCredentials(
         'clientId' => $config['clientId'],
         'clientSecret' => $config['clientSecret'],
     ]),
-    $config['environment'], '/v2.0', $config['companyId']);
+    $config['environment'], $config['apiRoute'], $config['companyId']);

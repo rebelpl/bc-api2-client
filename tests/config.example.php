@@ -7,6 +7,7 @@ return [
     'clientId'                  => getenv('CLIENT_ID') ?: '',
     'clientSecret'              => getenv('CLIENT_SECRET') ?: '',
     'environment'               => getenv('ENVIRONMENT') ?: 'sandbox',
+    'apiRoute'                  => getenv('API_ROUTE') ?: '/v2.0',
     'companyId'                 => getenv('COMPANY_ID') ?: '',
 
     // only for Authorization Code Grant

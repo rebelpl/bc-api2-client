@@ -11,5 +11,5 @@ return Client\Factory::useAuthorizationCode(
         'clientSecret' => $config['clientSecret'],
         'redirectUri' => $config['redirectUri'],
     ]),
-    $config['environment'], '/v2.0', $config['companyId'], [],
+    $config['environment'], $config['apiRoute'], $config['companyId'], [],
     $config['tokenFilename']);
