@@ -14,9 +14,6 @@ echo $repository->getBaseUrl() . "\n";
 
 $item = $repository->findOneBy([ 'number' => '100000' ]);
 echo ' - ' . $item->getNumber() . "\n";
-//echo ' - ' . $item->picture->contentType . "\n";
-//file_put_contents('tmp/' . $item->number . '.png', $item->picture->pictureContent->downloadWith($client));
-//echo ' - saved to tmp/' . $item->number . '.png' . "\n";
 
 $picture = file_get_contents('tests/files/picture.png');
 $item->getPicture()->getPictureContent()->uploadWith($client, $picture, $item->getPicture()->getETag());

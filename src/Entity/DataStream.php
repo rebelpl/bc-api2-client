@@ -10,23 +10,22 @@ class DataStream
 {
     private $url;
 
-    public function __construct(
-            string $url)
+    public function __construct(string $url)
     {
         $this->url = $url;
     }
-    
+
     public function getUrl(): string
     {
         return $this->url;
     }
-    
+
     public function downloadWith(Client $client): string
     {
         $response = $client->get($this->url);
         return $response->getBody()->getContents();
     }
-    
+
     public function uploadWith(Client $client, string $data, ?string $etag = null): void
     {
         $response = $client->call(
