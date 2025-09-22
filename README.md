@@ -137,7 +137,26 @@ $results = $repository->findBy([ 'sellToCountry' => ['PL', 'UK'] ], top: 10, exp
 echo count($results) . " sales orders found, only lines with quantity > 5 included.\n";
 ```
 
-### Working with expandedproperties
+### Working with binary data streams (BLOB)
+
+If the field in BC is stored as BLOB, it's accessible through API as Edm.Stream type. In order to access (read or write)
+its contents, you need to make additional call to the URL listed as @odata.mediaReadLink / @odata.mediaEditLink.
+
+```php
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'items');
+$item = $repository->findOneBy([ 'number' => '100000' ]);
+$picture = $item->get('picture');
+
+# download to a file 
+if ($picture->get('contentType')) {
+    file_put_contents('path/to/file.png', $picture->get('pictureContent')->downloadWith($client));
+}
+
+# upload from a file
+$picture->get('pictureContent')->uploadWith($client, file_get_contents('path/to/file.png'), $picture->getETag());
+```
+
+### Deep update with expanded properties
 
 Business Central does not support deep update and mixed insert/update operations.
 The Entity\Repository class provides a custom save() method that handles this limitation

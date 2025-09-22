@@ -104,7 +104,7 @@ class Client
         return $this->call($request);
     }
 
-    public function call(Request $request): ?Psr7\Response
+    public function call(Psr7\Request $request): ?Psr7\Response
     {
         # echo $request->getUri() . "\n";
         $request = $request
