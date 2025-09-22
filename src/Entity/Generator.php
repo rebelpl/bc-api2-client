@@ -51,7 +51,7 @@ readonly class Generator
     public function saveAllFilesTo(string $folder, bool $overwrite = false): void
     {
         $files = $this->generateAllFiles();
-        $this->saveFilesTo($files,$folder, $overwrite);
+        $this->saveFilesTo($files, $folder, $overwrite);
     }
 
     public function saveFileTo(PhpGenerator\PhpFile $file, string $path, bool $overwrite = false): void
