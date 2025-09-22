@@ -220,7 +220,6 @@ class Generator
     {
         return (new PhpGenerator\Property('classMap'))
             ->setValue(array_map(function ($value) { return new PhpGenerator\Literal($value . '::class'); }, $classMap))
-            ->setType('array')
             ->setProtected();
     }
     
