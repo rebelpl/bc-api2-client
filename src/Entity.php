@@ -1,6 +1,7 @@
 <?php
 namespace Rebel\BCApi2;
 
+use Psr\Http\Message\StreamInterface;
 use Rebel\BCApi2\Entity\Collection;
 use Carbon\Carbon;
 use Rebel\BCApi2\Entity\DataStream;
@@ -292,16 +293,37 @@ class Entity
         return $changes;
     }
     
-    public function doAction(string $name, Client $client): void
+    public function getContext(): Request\UriBuilder
     {
         if (empty($this->context) || empty($this->getPrimaryKey())) {
             throw new Exception\MissingEntityContext($this);
         }
-        
-        $url = new Request\UriBuilder($this->context, $this->getPrimaryKey())->include($name); 
+
+        return new Request\UriBuilder($this->context, $this->getPrimaryKey());
+    }
+    
+    public function getExpandedContext(string $name): string
+    {
+        return $this->getContext()->include($name);
+    }
+    
+    public function doAction(string $name, Client $client): void
+    {
+        $url = $this->getExpandedContext($name);
         $response = $client->post($url, '');
         if ($response->getStatusCode() !== Client::HTTP_OK) {
             throw new Exception\InvalidResponseException($response);
         }
+    }
+
+    public function getAsStream(string $name, Client $client): StreamInterface
+    {
+        $url = $this->getExpandedContext($name);
+        $response = $client->get($url);
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
+
+        return $response->getBody();
     }
 }
