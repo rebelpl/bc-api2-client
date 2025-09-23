@@ -79,7 +79,7 @@ class Client
 
     public function buildUri(string $uri): Psr7\Uri
     {
-        if (str_starts_with($uri, $this->baseUrl)) {
+        if (strpos($uri, $this->baseUrl) === 0) {
             return new Psr7\Uri($uri);
         }
         

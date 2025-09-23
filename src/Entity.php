@@ -81,13 +81,13 @@ class Entity
     public function loadData(array $data): void
     {
         foreach ($data as $property => $value) {
-            if (str_ends_with($property, self::ODATA_MEDIA_READLINK)) {
+            if (substr($property, -strlen(self::ODATA_MEDIA_READLINK)) === self::ODATA_MEDIA_READLINK) {
                 $property = substr($property, 0, -strlen(self::ODATA_MEDIA_READLINK));
                 $this->setAsStream($property, $value);
                 continue;
             }
 
-            if (str_ends_with($property, self::ODATA_MEDIA_EDITLINK)) {
+            if (substr($property, -strlen(self::ODATA_MEDIA_EDITLINK)) === self::ODATA_MEDIA_EDITLINK) {
                 $property = substr($property, 0, -strlen(self::ODATA_MEDIA_EDITLINK));
                 $this->setAsStream($property, $value);
                 continue;
@@ -182,7 +182,7 @@ class Entity
     public function getAsDateTime(string $property): ?Carbon
     {
         $value = $this->data[ $property ] ?? null;
-        if (empty($value) || str_starts_with($value, '0001')) {
+        if (empty($value) || (strpos($value, '0001') === 0)) {
             return null;
         }
 

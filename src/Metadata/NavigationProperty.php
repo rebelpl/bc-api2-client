@@ -39,7 +39,7 @@ class NavigationProperty
 
     public function isCollection(): bool
     {
-        return str_starts_with($this->type, 'Collection(');
+        return strpos($this->type, 'Collection(') === 0;
     }
 
     public function getCollectionType(): ?string

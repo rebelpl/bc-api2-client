@@ -291,7 +291,8 @@ class Generator
      */
     protected function generateRecordMethods(string $name, string $propertyType, bool $isUpdateable): array
     {
-        if (str_ends_with($name, 'Filter') or str_ends_with($name, Metadata::FILTER_SUFFIX)) {
+        if ((substr($name, -strlen('Filter')) === 'Filter') or
+            (substr($name, -strlen(Metadata::FILTER_SUFFIX)) === Metadata::FILTER_SUFFIX)) {
             return [];
         }
         
@@ -355,7 +356,7 @@ class Generator
      */
     protected function generateRecordMethodsEnum(string $name, string $propertyType, bool $isUpdateable): array 
     {
-        if (!str_starts_with($propertyType, $this->metadata->getNamespace())) {
+        if (strpos($propertyType, $this->metadata->getNamespace()) !== 0) {
             throw new Exception("Property type '$propertyType' not found in metadata.");
         }
         
