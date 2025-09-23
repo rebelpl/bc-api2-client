@@ -154,6 +154,13 @@ if ($picture->get('contentType')) {
 
 # upload from a file
 $picture->get('pictureContent')->uploadWith($client, file_get_contents('path/to/file.png'), $picture->getETag());
+
+# download a stream without expanding the record
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesInvoices');
+$invoices = $repository->findBy([ 'isClosed' => false, 'dueDate le 2025-09-19' ]);
+foreach ($invoices as $invoice) {
+    file_put_contents('path/to/' . $invoice->get('number') . '.pdf', $invoice->getAsStream('pdfDocument/pdfDocumentContent'));
+}
 ```
 
 ### Deep update with expanded properties
