@@ -1,6 +1,8 @@
 <?php
 namespace Rebel\BCApi2\Request;
 
+use Rebel\BCApi2\Exception\InvalidRequestExpression;
+
 /**
  * https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/webservices/use-filter-expressions-in-odata-uris
  * https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html
@@ -71,6 +73,10 @@ readonly class Expression
     public function __toString(): string
     {
         if (is_array($this->value)) {
+            if (count($this->value) === 0) {
+                throw new InvalidRequestExpression(sprintf("Array value used for '%s %s' filter cannot be empty.", $this->field, $this->operator));
+            }
+            
             return match ($this->operator) {
                 self::EQ => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
                 self::NE => self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)),
@@ -79,7 +85,7 @@ readonly class Expression
                 self::ENDSWITH   => self::or(array_map(fn($val) => self::endsWith($this->field, $val), $this->value)),
                 self::CONTAINS   => self::or(array_map(fn($val) => self::contains($this->field, $val), $this->value)),
                 
-                default => throw new \Exception("Array values can be only used with selected operators."),
+                default => throw new InvalidRequestExpression(sprintf("Array value cannot be used with '%s %s' filter.", $this->field, $this->operator)),
             };
         }
 
