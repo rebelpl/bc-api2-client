@@ -145,4 +145,16 @@ class RepositoryTest extends TestCase
         $this->assertEquals('$top=1',
             urldecode($lastRequest->getUri()->getQuery()));
     }
+    
+    public function testFindByDate()
+    {
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/salesOrders.json')));
+        
+        $repository = new Repository($this->client, 'salesOrders');
+        $repository->findBy([ 'documentDate' => new \DateTime('2020-12-31') ]);
+        $lastRequest = $this->getLastRequest();
+        $this->assertEquals('$filter=documentDate eq 2020-12-31T00:00:00.000Z',
+            urldecode($lastRequest->getUri()->getQuery()));
+    }
 }
