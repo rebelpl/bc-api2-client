@@ -2,6 +2,7 @@
 namespace Rebel\Test\BCApi2\Request;
 
 use PHPUnit\Framework\TestCase;
+use Rebel\BCApi2\Exception\InvalidRequestExpression;
 use Rebel\BCApi2\Request\Expression;
 
 class ExpressionTest extends TestCase
@@ -57,5 +58,17 @@ class ExpressionTest extends TestCase
         ]); 
         
         $this->assertEquals("(a eq 'b' or a eq 'c') and foo eq 'bar'", $expression);
+    }
+    
+    public function testEmptyInExpressionThrowsException()
+    {
+        $this->expectException(InvalidRequestExpression::class);
+        Expression::in('foo', []);
+    }
+
+    public function testArrayValueGreaterThanExpressionThrowsException()
+    {
+        $this->expectException(InvalidRequestExpression::class);
+        Expression::greaterThan('foo', []);
     }
 }
