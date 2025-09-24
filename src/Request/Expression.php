@@ -67,16 +67,22 @@ readonly class Expression
     {
         $this->field = $field;
         $this->operator = self::ALTERNATIVES[ $operator ] ?? $operator;
+        
         $this->value = $value;
-    }
-
-    public function __toString(): string
-    {
         if (is_array($this->value)) {
             if (count($this->value) === 0) {
                 throw new InvalidRequestExpression(sprintf("Array value used for '%s %s' filter cannot be empty.", $this->field, $this->operator));
             }
             
+            if (!in_array($this->operator, [ self::EQ, self::NE, self::STARTSWITH, self::ENDSWITH, self::CONTAINS ])) {
+                throw new InvalidRequestExpression(sprintf("Array value cannot be used with '%s %s' filter.", $this->field, $this->operator));
+            }
+        }
+    }
+
+    public function __toString(): string
+    {
+        if (is_array($this->value)) {
             return match ($this->operator) {
                 self::EQ => self::or(array_map(fn($val) => self::equals($this->field, $val), $this->value)),
                 self::NE => self::and(array_map(fn($val) => self::notEquals($this->field, $val), $this->value)),
@@ -84,8 +90,6 @@ readonly class Expression
                 self::STARTSWITH => self::or(array_map(fn($val) => self::startsWith($this->field, $val), $this->value)),
                 self::ENDSWITH   => self::or(array_map(fn($val) => self::endsWith($this->field, $val), $this->value)),
                 self::CONTAINS   => self::or(array_map(fn($val) => self::contains($this->field, $val), $this->value)),
-                
-                default => throw new InvalidRequestExpression(sprintf("Array value cannot be used with '%s %s' filter.", $this->field, $this->operator)),
             };
         }
 
