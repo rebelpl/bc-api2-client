@@ -59,7 +59,7 @@ class Batch
 
     public function getRequest(): Request
     {
-        return new Request('POST', '/$batch',
+        return new Request('POST', '$batch',
             $this->toJson());
     }
 }

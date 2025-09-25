@@ -37,7 +37,7 @@ class Repository
 
         $this->baseUrl = $isCompanyResource
             ? $this->client->getCompanyPath() . '/' . $entitySetName
-            : '/' . $entitySetName;
+            : $entitySetName;
     }
 
     public function getEntityClass(): string
@@ -59,7 +59,7 @@ class Repository
     /**
      * @return ?T
      */
-    public function findOneBy(array $criteria, ?array $expanded = null): ?Entity
+    public function findOneBy(array $criteria, array $expanded = []): ?Entity
     {
         $result = $this->findBy($criteria, null, 1, null, $expanded);
         return !empty($result) ? $result[0] : null;
@@ -68,7 +68,7 @@ class Repository
     /**
      * @return T[]
      */
-    public function findAll($orderBy = null, ?array $expanded = null): array
+    public function findAll($orderBy = null, array $expanded = []): array
     {
         return $this->findBy([], $orderBy, null, null, $expanded);
     }
@@ -76,9 +76,9 @@ class Repository
     /**
      * @return T[]
      */
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, ?array $expanded = null): array
+    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
     {
-        $expanded = $expanded ?? $this->expandedByDefault;
+        $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
             (new Request\UriBuilder($this->baseUrl))
                 ->where($criteria)
@@ -104,9 +104,9 @@ class Repository
     /**
      * @return ?T
      */
-    public function get(string $primaryKey, ?array $expanded = null): ?Entity
+    public function get(string $primaryKey, array $expanded = []): ?Entity
     {
-        $expanded = $expanded ?? $this->expandedByDefault;
+        $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
             (new Request\UriBuilder($this->baseUrl, $primaryKey))
                 ->expand($expanded));
@@ -127,7 +127,7 @@ class Repository
     /**
      * @return ?T
      */
-    public function find(string $primaryKey, ?array $expanded = null): ?Entity
+    public function find(string $primaryKey, array $expanded = []): ?Entity
     {
         return $this->get($primaryKey, $expanded);
     }
@@ -176,7 +176,7 @@ class Repository
         }
 
         $data = json_decode($response->getBody(), true);
-        $entity->loadData($data);
+        $entity->loadData($data, $this->baseUrl);
     }
 
     public function update(Entity $entity): void
@@ -200,7 +200,7 @@ class Repository
 
         $data = json_decode($response->getBody(), true);
         if (!isset($data['responses'])) {
-            $entity->loadData($data);
+            $entity->loadData($data, $this->baseUrl);
             return;
         }
 
@@ -213,7 +213,7 @@ class Repository
             }
 
             if ($response['id'] === '$read') {
-                $entity->loadData($body);
+                $entity->loadData($body, $this->baseUrl);
             }
         }
     }

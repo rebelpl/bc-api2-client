@@ -9,9 +9,6 @@ use Rebel\BCApi2\Exception\InvalidRequestExpression;
  */
 class Expression
 {
-    const DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
-    const DATE_FORMAT = 'Y-m-d';
-
     // Comparison operators
     const 
         EQ = 'eq',  // Equal to
@@ -113,36 +110,10 @@ class Expression
             case self::STARTSWITH:
             case self::ENDSWITH:
             case self::CONTAINS:
-                return sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value));
+                return sprintf('%s(%s, %s)', $this->operator, $this->field, new ODataValue($this->value));
             
             default:
-                return join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]);
-        }
-    }
-
-    public function encodeODataValue($value): string {
-        if (is_string($value)) {
-            // Escape single quotes and wrap the value in single quotes
-            $value = str_replace("'", "''", $value);
-            return "'$value'";
-        } elseif (is_numeric($value)) {
-            // Return numeric values as is
-            return (string)$value;
-        } elseif (is_bool($value)) {
-            // Convert boolean to lowercase string
-            return $value ? 'true' : 'false';
-        } elseif (is_null($value)) {
-            // Handle null values
-            return 'null';
-        } elseif ($value instanceof \DateTime) {
-            // Format DateTime objects as OData-compatible strings
-            return $value->format(self::DATETIME_FORMAT);
-        } elseif ($value instanceof Expression) {
-            // Return as is
-            return (string)$value;
-        } else {
-            // Fallback for other types (e.g., arrays or objects)
-            return "'" . addslashes((string) $value) . "'";
+                return join(' ', [ $this->field, $this->operator, new ODataValue($this->value) ]);
         }
     }
 

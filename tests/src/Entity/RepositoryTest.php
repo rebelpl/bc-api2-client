@@ -62,7 +62,7 @@ class RepositoryTest extends TestCase
     public function testGetBaseUrl()
     {
         $repository = new Repository($this->client, 'salesInvoices');
-        $this->assertEquals('/companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
+        $this->assertEquals('companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
     }
 
     public function testGetSalesOrders()
@@ -71,7 +71,7 @@ class RepositoryTest extends TestCase
             file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], null, 3, 2, ['salesOrderLines', 'customer']);
+        $result = $repository->findBy([], null, 3, 2,  'salesOrderLines', 'customer' ]);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 
@@ -92,17 +92,20 @@ class RepositoryTest extends TestCase
 
             $lastModifiedDateTime = $salesOrder->getAsDateTime('lastModifiedDateTime');
             $this->assertGreaterThan(new \DateTime('2020-12-31'), $lastModifiedDateTime);
+            $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)', $salesOrder->get('id')), (string)$salesOrder->getContext());
 
             $this->assertGreaterThan(0, count($salesOrder->get('salesOrderLines')));
             foreach ($salesOrder->get('salesOrderLines') as $salesOrderLine) {
                 $this->assertInstanceOf(Entity::class, $salesOrderLine);
                 $this->assertNotEmpty($salesOrderLine->get('description'));
                 $this->assertGreaterThan(0, $salesOrderLine->get('quantity'));
+                $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)/salesOrderLines(%s)', $salesOrder->get('id'), $salesOrderLine->get('id')), (string)$salesOrderLine->getContext());
             }
 
             $customer = $salesOrder->get('customer');
             $this->assertInstanceOf(Entity::class, $customer);
             $this->assertNotEmpty($customer->get('displayName'));
+            $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)/customer(%s)', $salesOrder->get('id'), $customer->get('id')), (string)$customer->getContext());
         }
     }
 

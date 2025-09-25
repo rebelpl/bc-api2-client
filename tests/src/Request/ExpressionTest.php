@@ -4,6 +4,7 @@ namespace Rebel\Test\BCApi2\Request;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Exception\InvalidRequestExpression;
 use Rebel\BCApi2\Request\Expression;
+use Rebel\BCApi2\Request\ODataValue;
 
 class ExpressionTest extends TestCase
 {
@@ -21,7 +22,7 @@ class ExpressionTest extends TestCase
         $expression = new Expression('postingDate', Expression::GT, new \DateTime('2024-01-30'));
         $this->assertEquals("postingDate gt 2024-01-30T00:00:00.000Z", (string)$expression);
 
-        $datetime = \DateTime::createFromFormat(Expression::DATETIME_FORMAT, '2025-01-20T12:12:14.917Z');
+        $datetime = \DateTime::createFromFormat(ODataValue::DATETIME_FORMAT, '2025-01-20T12:12:14.917Z');
         $expression = new Expression('postingDate', Expression::GT, $datetime);
         $this->assertEquals("postingDate gt 2025-01-20T12:12:14.917Z", (string)$expression);
 

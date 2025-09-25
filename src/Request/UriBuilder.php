@@ -15,7 +15,7 @@ class UriBuilder
         ?string $primaryKey = null)
     {
         $this->primaryKey = $primaryKey;
-        $this->resourceUrl = rtrim($resourceUrl, '/');
+        $this->resourceUrl = trim($resourceUrl, '/');
     }
 
     public function get($primaryKey): self
@@ -155,7 +155,7 @@ class UriBuilder
     {
         $uri = $this->resourceUrl;
         if ($this->primaryKey) {
-            $uri .= sprintf('(%s)', $this->primaryKey);
+            $uri .= sprintf('(%s)', new ODataValue($this->primaryKey));
         }
 
         if ($this->includePart) {
