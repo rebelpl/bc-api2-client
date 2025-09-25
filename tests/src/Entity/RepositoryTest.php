@@ -71,7 +71,7 @@ class RepositoryTest extends TestCase
             file_get_contents('tests/files/salesOrders.json')));
 
         $repository = new Repository($this->client, 'salesOrders');
-        $result = $repository->findBy([], null, 3, 2,  'salesOrderLines', 'customer' ]);
+        $result = $repository->findBy([], null, 3, 2, [ 'salesOrderLines', 'customer' ]);
         $this->assertCount(3, $result);
         $this->assertCount(1, $this->historyContainer);
 

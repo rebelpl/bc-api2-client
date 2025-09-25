@@ -1,14 +1,15 @@
 <?php
 namespace Rebel\BCApi2\Request;
 
-readonly class ODataValue
+class ODataValue
 {
-    const string DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
-    const string DATE_FORMAT = 'Y-m-d';
-    
-    public function __construct(
-        private mixed $value)
+    const DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
+    const DATE_FORMAT = 'Y-m-d';
+    private $value;
+
+    public function __construct($value)
     {
+        $this->value = $value;
     }
 
     public function isGuid(): bool
@@ -27,14 +28,17 @@ readonly class ODataValue
     
     public function __toString(): string
     {
-        return match (true) {
-            $this->isGuid() => $this->value,
-            is_string($this->value) => "'" . str_replace("'", "''", $this->value) . "'",
-            $this->value instanceof Expression, is_float($this->value), is_int($this->value) => (string)$this->value,
-            is_bool($this->value) => $this->value ? 'true' : 'false',
-            is_null($this->value) => 'null',
-            $this->value instanceof \DateTime => $this->value->format(self::DATETIME_FORMAT),
-            default => "'" . addslashes((string)$this->value) . "'",
-        };
+        switch (true) {
+            case $this->isGuid(): return $this->value;
+            case is_string($this->value): return "'" . str_replace("'", "''", $this->value) . "'";
+            case $this->value instanceof Expression:
+            case is_float($this->value):
+            case is_int($this->value):
+                return (string)$this->value;
+            case is_bool($this->value): return $this->value ? 'true' : 'false';
+            case is_null($this->value): return 'null';
+            case ($this->value instanceof \DateTime): return $this->value->format(self::DATETIME_FORMAT);
+            default: return "'" . addslashes((string) $this->value) . "'";
+        }
     }
 }
