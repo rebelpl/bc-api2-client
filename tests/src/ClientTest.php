@@ -60,7 +60,7 @@ class ClientTest extends TestCase
 
     public function testGetCompanyUrl()
     {
-        $this->assertEquals('/companies(test-company-id)', $this->client->getCompanyPath());
+        $this->assertEquals('companies(test-company-id)', $this->client->getCompanyPath());
     }
 
     public function testBuildUri(): void

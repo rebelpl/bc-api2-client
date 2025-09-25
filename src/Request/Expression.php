@@ -9,9 +9,6 @@ use Rebel\BCApi2\Exception\InvalidRequestExpression;
  */
 readonly class Expression
 {
-    const string DATETIME_FORMAT = 'Y-m-d\TH:i:s.v\Z';
-    const string DATE_FORMAT = 'Y-m-d';
-
     // Comparison operators
     const string
         EQ = 'eq',  // Equal to
@@ -95,35 +92,9 @@ readonly class Expression
 
         return match ($this->operator) {
             self::STARTSWITH, self::ENDSWITH, self::CONTAINS
-                => sprintf('%s(%s, %s)', $this->operator, $this->field, $this->encodeODataValue($this->value)),
-            default => join(' ', [ $this->field, $this->operator, $this->encodeODataValue($this->value) ]), 
+                => sprintf('%s(%s, %s)', $this->operator, $this->field, new ODataValue($this->value)),
+            default => join(' ', [ $this->field, $this->operator, new ODataValue($this->value) ]), 
         };
-    }
-
-    public function encodeODataValue(mixed $value): string {
-        if (is_string($value)) {
-            // Escape single quotes and wrap the value in single quotes
-            $value = str_replace("'", "''", $value);
-            return "'$value'";
-        } elseif (is_numeric($value)) {
-            // Return numeric values as is
-            return (string)$value;
-        } elseif (is_bool($value)) {
-            // Convert boolean to lowercase string
-            return $value ? 'true' : 'false';
-        } elseif (is_null($value)) {
-            // Handle null values
-            return 'null';
-        } elseif ($value instanceof \DateTime) {
-            // Format DateTime objects as OData-compatible strings
-            return $value->format(self::DATETIME_FORMAT);
-        } elseif ($value instanceof Expression) {
-            // Return as is
-            return (string)$value;
-        } else {
-            // Fallback for other types (e.g., arrays or objects)
-            return "'" . addslashes((string) $value) . "'";
-        }
     }
 
     public static function in(string $field, array $values): Expression

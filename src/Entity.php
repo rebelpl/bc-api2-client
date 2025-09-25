@@ -15,7 +15,7 @@ class Entity
     const string NULL_GUID = '00000000-0000-0000-0000-000000000000';
 
     protected array $original = [];
-    protected string $primaryKey = 'id';
+    protected string $primaryKey;
     protected array $classMap = [];
     protected array $expanded = [];
 
@@ -23,7 +23,7 @@ class Entity
         get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
     }
 
-    public readonly ?string $context;
+    public ?string $context;
 
     public function __construct(
         protected array $data = [],
@@ -35,8 +35,7 @@ class Entity
             $this->expanded[ $name ] = null;
         }
 
-        $this->loadData($data);
-        $this->context = $context;
+        $this->loadData($data, $context);
     }
 
     public function hasExpandedProperties(): bool
@@ -76,14 +75,22 @@ class Entity
         $this->data[ $this->primaryKey ] = $value;
     }
 
-    public function getPrimaryKey(): ?string
+    public function getPrimaryKey(): mixed
     {
         return $this->data[ $this->primaryKey ] ?? null;
     }
 
-    public function loadData(array $data): void
+    public function loadData(array $data, ?string $context = null): void
     {
+        if (!empty($data[ Entity::ODATA_ETAG ])) {
+            $this->context = $context;
+        }
+        
         foreach ($data as $property => $value) {
+            if (!isset($this->primaryKey) && !str_starts_with($property, '@odata')) {
+                $this->primaryKey = $property;
+            }
+            
             if (str_ends_with($property, self::ODATA_MEDIA_READLINK)) {
                 $property = substr($property, 0, -strlen(self::ODATA_MEDIA_READLINK));
                 $this->setAsStream($property, $value);
@@ -105,8 +112,6 @@ class Entity
 
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
-            unset($data[ Entity::ODATA_ETAG ]);
-            $this->primaryKey = array_key_first($data);
         }
     }
 
@@ -126,12 +131,13 @@ class Entity
         }
 
         $className = $this->getClassnameFor($property);
+        $context = $this->getExpandedContext($property, false);
         if (!array_is_list($value)) {
-            return new $className($value);
+            return new $className($value, [], $context);
         }
 
-        return new Collection(array_map(function ($item) use ($className) {
-            return new $className($item);
+        return new Collection(array_map(function ($item) use ($className, $context) {
+            return new $className($item, [], $context);
         }, $value));
     }
 
@@ -293,18 +299,22 @@ class Entity
         return $changes;
     }
     
-    public function getContext(): Request\UriBuilder
+    public function getContext(bool $throwExceptionIfMissing = true): ?Request\UriBuilder
     {
         if (empty($this->context) || empty($this->getPrimaryKey())) {
-            throw new Exception\MissingEntityContext($this);
+            if ($throwExceptionIfMissing) {
+                throw new Exception\MissingEntityContext($this);
+            }
+            
+            return null;
         }
 
         return new Request\UriBuilder($this->context, $this->getPrimaryKey());
     }
     
-    public function getExpandedContext(string $name): string
+    public function getExpandedContext(string $name, bool $throwExceptionIfMissing = true): ?string
     {
-        return $this->getContext()->include($name);
+        return $this->getContext($throwExceptionIfMissing)?->include($name);
     }
     
     public function doAction(string $name, Client $client): void

@@ -66,7 +66,7 @@ class Client
             throw new Exception('You cannot call company resources without valid companyId. Run getCompanies() to obtain a list of companies.');
         }
 
-        return "/companies($this->companyId)";
+        return "companies($this->companyId)";
     }
 
     public function buildUri(string $uri): Psr7\Uri

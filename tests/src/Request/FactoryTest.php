@@ -22,7 +22,7 @@ class FactoryTest extends TestCase
     public function testSimpleUpdate()
     {
         $entity = new Entity([
-            'id' => '123',
+            'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
             'name' => 'Test Entity',
             Entity::ODATA_ETAG => 'test-etag',
         ]);
@@ -33,7 +33,7 @@ class FactoryTest extends TestCase
 
         $request = Factory::updateEntity('/test', $entity, $data);
         $this->assertEquals('PATCH', $request->getMethod());
-        $this->assertEquals('/test(123)', (string)$request->getUri());
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)', (string)$request->getUri());
         $this->assertEquals(json_encode($data), $request->getBody()->getContents());
         $this->assertEquals('test-etag', $request->getHeaderLine('If-Match'));
     }
@@ -41,7 +41,7 @@ class FactoryTest extends TestCase
     public function testExtendedUpdate()
     {
         $entity = new Entity([
-            'id' => '123',
+            'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
             'name' => 'Test Entity',
             Entity::ODATA_ETAG => 'test-etag',
             'lines' => [
@@ -72,7 +72,7 @@ class FactoryTest extends TestCase
         $body = json_decode($request->getBody()->getContents(), true);
 
         $this->assertEquals('POST', $request->getMethod());
-        $this->assertEquals('/$batch', $request->getUri());
+        $this->assertEquals('$batch', (string)$request->getUri());
 
         $requests = [];
         foreach ($body['requests'] as $request) {
@@ -89,27 +89,27 @@ class FactoryTest extends TestCase
 
         $request = $requests['lines/0'];
         $this->assertEquals('PATCH', $request['method']);
-        $this->assertEquals('/test(123)/lines(123-001)', $request['url']);
+        $this->assertEquals("test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)/lines('123-001')", $request['url']);
         $this->assertEquals('line-etag', $request['headers']['If-Match']);
 
         $request = $requests['lines/1'];
         $this->assertEquals('POST', $request['method']);
-        $this->assertEquals('/test(123)/lines', $request['url']);
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)/lines', $request['url']);
         $this->assertEquals('itemB', $request['body']['item']);
 
         $request = $requests['customer'];
         $this->assertEquals('PATCH', $request['method']);
-        $this->assertEquals('/test(123)/customer', $request['url']);
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)/customer', $request['url']);
         $this->assertEquals('Jane Doe', $request['body']['name']);
 
         $request = $requests['$update'];
         $this->assertEquals('PATCH', $request['method']);
-        $this->assertEquals('/test(123)', $request['url']);
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)', $request['url']);
         $this->assertEquals('Another Name', $request['body']['name']);
 
         $request = $requests['$read'];
         $this->assertEquals('GET', $request['method']);
-        $this->assertEquals('/test(123)?%24expand=lines%2Ccustomer', $request['url']);
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)?$expand=lines,customer', urldecode($request['url']));
         $this->assertArrayNotHasKey('body', $request);
     }
 }

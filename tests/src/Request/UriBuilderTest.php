@@ -19,7 +19,7 @@ class UriBuilderTest extends TestCase
         $this->assertEquals('salesInvoices(28091159-8974-ed11-9989-6045bd169deb)', $request->buildUri());
 
         $request = new UriBuilder('testEntity')->get('TEST-123');
-        $this->assertEquals("testEntity(TEST-123)", (string)$request);
+        $this->assertEquals("testEntity('TEST-123')", (string)$request);
 
         $request = new UriBuilder('items')
             ->select([ 'number', 'displayName' ])
