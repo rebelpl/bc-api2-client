@@ -72,7 +72,7 @@ class Entity
         $this->data[ $this->primaryKey ] = $value;
     }
 
-    public function getPrimaryKey(): mixed
+    public function getPrimaryKey()
     {
         return $this->data[ $this->primaryKey ] ?? null;
     }
@@ -84,7 +84,7 @@ class Entity
         }
         
         foreach ($data as $property => $value) {
-            if (!isset($this->primaryKey) && !str_starts_with($property, '@odata')) {
+            if (!isset($this->primaryKey) && (strpos($property, '@odata') !== 0)) {
                 $this->primaryKey = $property;
             }
             
@@ -299,7 +299,10 @@ class Entity
     
     public function getExpandedContext(string $name, bool $throwExceptionIfMissing = true): ?string
     {
-        return $this->getContext($throwExceptionIfMissing)?->include($name);
+        $context = $this->getContext($throwExceptionIfMissing);
+        return $context
+            ? $context->include($name)
+            : null;
     }
     
     public function doAction(string $name, Client $client): void
