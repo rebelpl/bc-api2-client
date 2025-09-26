@@ -10,9 +10,11 @@ use Nette\PhpGenerator;
 use Rebel\BCApi2\Metadata\EntityType;
 use Carbon\Carbon;
 
-readonly class Generator
+class Generator
 {
-    const array EXCLUDED_ENTITYSETS = [
+    private string $namespacePrefix;
+
+    private array $excludedEntitySets = [
         'entityDefinitions',
         'companies',
         'subscriptions',
@@ -21,13 +23,39 @@ readonly class Generator
         'apicategoryroutes'
     ];
 
-    private string $namespacePrefix;
+    private array $readonlyProperties = [
+        'id', 'lastModifiedDateTime', 'rowVersion'
+    ];
 
     public function __construct(
-        private Metadata $metadata,
+        private readonly Metadata $metadata,
         string           $namespacePrefix = 'Rebel\\BCApi2\\Entity\\')
     {
         $this->namespacePrefix = rtrim($namespacePrefix, '\\') . '\\';
+    }
+
+    public function addExcludedEntitySets(array $entitySets): self
+    {
+        $this->excludedEntitySets = array_merge($this->excludedEntitySets, $entitySets);
+        return $this;
+    }
+
+    public function setExcludedEntitySets(array $entitySets): self
+    {
+        $this->excludedEntitySets = $entitySets;
+        return $this;
+    }
+
+    public function addReadonlyProperties(array $properties): self
+    {
+        $this->readonlyProperties = array_merge($this->readonlyProperties, $properties);
+        return $this;
+    }
+
+    public function setReadonlyProperties(array $properties): self
+    {
+        $this->readonlyProperties = array_merge($this->excludedEntitySets, $properties);
+        return $this;
     }
 
     /**
@@ -83,6 +111,16 @@ readonly class Generator
         return $file;
     }
 
+    protected function isEntitySetExcluded(string $name): bool
+    {
+        return in_array($name, $this->excludedEntitySets);
+    }
+
+    protected function isPropertyReadOnly(string $name): bool
+    {
+        return in_array($name, $this->readonlyProperties);
+    }
+
     /**
      * @return PhpGenerator\PhpFile[]
      * @throws Exception
@@ -92,7 +130,7 @@ readonly class Generator
         $files = [];
         foreach ($this->metadata->getEntitySets() as $entitySet) {
             $name = $entitySet->getName();
-            if (!in_array($name, self::EXCLUDED_ENTITYSETS)) {
+            if (!$this->isEntitySetExcluded($name)) {
                 $files = array_merge($files, $this->generateFilesForEntitySet($name));
             }
         }
@@ -285,10 +323,15 @@ readonly class Generator
         
         return array_filter($classMembers);
     }
+
+    protected function shouldSkipPropertyInRecord(string $name): bool
+    {
+        return str_ends_with($name, 'Filter') or str_ends_with($name, Metadata::FILTER_SUFFIX);
+    }
     
     protected function generateRecordProperty(string $name, string $propertyType, bool $isUpdateable): ?PhpGenerator\Property
     {
-        if (str_ends_with($name, 'Filter') or str_ends_with($name, Metadata::FILTER_SUFFIX)) {
+        if ($this->shouldSkipPropertyInRecord($name)) {
             return null;
         }
 
@@ -352,8 +395,7 @@ readonly class Generator
 
     protected function generateRecordPropertySimple(string $name, string $propertyType, bool $isUpdateable): PhpGenerator\Property
     {
-        // id is always read-only
-        if ($name === 'id') {
+        if ($this->isPropertyReadOnly($name)) {
             $isUpdateable = false;
         }
 
