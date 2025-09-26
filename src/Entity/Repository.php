@@ -123,6 +123,28 @@ class Repository
         $data = json_decode($response->getBody(), true);
         return $this->hydrate($data, $expanded);
     }
+    
+    private function normalizeExpandedToArray(mixed $expanded): array
+    {
+        if (!is_iterable($expanded)) {
+            return [ (string)$expanded ];
+        }
+        
+        $result = [];
+        foreach ($expanded as $key => $value) {
+            if (is_int($key)) {
+                $result[] = $value;
+            }
+            elseif (is_string($key) && is_array($value)) {
+                $result[] = $key;
+            }
+            else {
+                throw new Exception(sprintf('Invalid expand key: %s.', $key));
+            }
+        }
+        
+        return $result;
+    }
 
     /**
      * @return ?T
@@ -250,19 +272,7 @@ class Repository
     private function hydrate(array $data, array $expanded): Entity
     {
         return new $this->entityClass($data,
-            $this->arrayIsList($expanded) ? $expanded : array_keys($expanded),
+            $this->normalizeExpandedToArray($expanded),
             $this->baseUrl);
-    }
-    
-    private function arrayIsList(array $array): bool
-    {
-        $i = 0;
-        foreach ($array as $key => $value) {
-            if ($key !== $i++) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
