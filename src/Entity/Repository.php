@@ -124,7 +124,7 @@ class Repository
         return $this->hydrate($data, $expanded);
     }
     
-    private function normalizeExpandedToArray(mixed $expanded): array
+    private function normalizeExpandedToArray($expanded): array
     {
         if (!is_iterable($expanded)) {
             return [ (string)$expanded ];
