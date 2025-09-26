@@ -9,19 +9,19 @@ class UriBuilderTest extends TestCase
 {
     public function testBuildUri(): void
     {
-        $request = new UriBuilder('companies');
-        $this->assertEquals('companies', $request->buildUri());
+        $uri = new UriBuilder('companies');
+        $this->assertEquals('companies', $uri->buildUri());
 
-        $request = new UriBuilder('salesInvoices');
-        $this->assertEquals('salesInvoices', $request->buildUri());
+        $uri = new UriBuilder('salesInvoices');
+        $this->assertEquals('salesInvoices', $uri->buildUri());
 
-        $request = new UriBuilder('salesInvoices', '28091159-8974-ed11-9989-6045bd169deb');
-        $this->assertEquals('salesInvoices(28091159-8974-ed11-9989-6045bd169deb)', $request->buildUri());
+        $uri = new UriBuilder('salesInvoices', '28091159-8974-ed11-9989-6045bd169deb');
+        $this->assertEquals('salesInvoices(28091159-8974-ed11-9989-6045bd169deb)', $uri->buildUri());
 
-        $request = new UriBuilder('testEntity')->get('TEST-123');
-        $this->assertEquals("testEntity('TEST-123')", (string)$request);
+        $uri = new UriBuilder('testEntity')->get('TEST-123');
+        $this->assertEquals("testEntity('TEST-123')", (string)$uri);
 
-        $request = new UriBuilder('items')
+        $uri = new UriBuilder('items')
             ->select([ 'number', 'displayName' ])
             ->top(5)
             ->skip(3)
@@ -42,6 +42,34 @@ class UriBuilderTest extends TestCase
             .' and '
             .'lastModifiedDateTime gt 2021-01-15T00:00:00.000Z'
             .'&$orderby=number desc';
-        $this->assertEquals($expected, urldecode($request));
+        $this->assertEquals($expected, urldecode($uri));
+    }
+
+    public function testExpandWithStringArgument(): void
+    {
+        $uri = new UriBuilder('items')
+            ->expand('references,availability');
+        $this->assertEquals('items?$expand=references,availability', urldecode($uri));
+    }
+
+    public function testExpandWithSimpleArguments(): void
+    {
+        $uri = new UriBuilder('items')
+            ->expand([ 'references', 'availability' ]);
+        $this->assertEquals('items?$expand=references,availability', urldecode($uri));
+    }
+
+    public function testExpandWithFilterArguments(): void
+    {
+        $uri = new UriBuilder('items')
+            ->expand([ 'availability' => [ Expression::greaterThan('dateFilter', '2021-01-15') ] ]);
+        $this->assertEquals('items?$expand=availability($filter=dateFilter gt \'2021-01-15\')', urldecode($uri));
+    }
+
+    public function testExpandWithMixedArguments(): void
+    {
+        $uri = new UriBuilder('items')
+            ->expand([ 'references', 'availability' => [ Expression::greaterThan('dateFilter', '2021-01-15') ] ]);
+        $this->assertEquals('items?$expand=references,availability($filter=dateFilter gt \'2021-01-15\')', urldecode($uri));
     }
 }

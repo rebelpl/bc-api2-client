@@ -2,6 +2,7 @@
 namespace Rebel\BCApi2\Request;
 
 use GuzzleHttp\Psr7;
+use Rebel\BCApi2\Exception;
 
 class UriBuilder
 {
@@ -32,12 +33,13 @@ class UriBuilder
 
     public function expand($properties): self
     {
-        if (!empty($properties)) {
-            $this->queryOptions['$expand'] = is_array($properties)
-                ? $this->expandStringFromArray($properties)
-                : (string)$properties;
+        if (empty($properties)) {
+            return $this;
         }
-
+        
+        $this->queryOptions['$expand'] = is_array($properties)
+            ? $this->expandStringFromArray($properties)
+            : (string)$properties;
         return $this;
     }
     
@@ -47,10 +49,18 @@ class UriBuilder
             return join(',', $array);
         }
 
-        // todo: $top, $skip, etc.
+        // todo: $top, $skip, etc. - introduce something like ExpandBuilder
         $expand = [];
         foreach ($array as $key => $value) {
-            $expand[] = $key . '($filter=' . $this->filterStringFromCriteria($value) . ')';
+            if (is_int($key)) {
+                $expand[] = $value;
+            }
+            elseif (is_string($key) && is_array($value)) {
+                $expand[] = $key . '($filter=' . $this->filterStringFromCriteria($value) . ')';
+            }
+            else {
+                throw new Exception(sprintf('Invalid expand key: %s.', $key));
+            }
         }
         
         return join(',', $expand);
