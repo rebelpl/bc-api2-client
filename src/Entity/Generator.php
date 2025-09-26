@@ -12,8 +12,6 @@ use Carbon\Carbon;
 
 class Generator
 {
-    const EXCLUDED_ENTITYSETS = '';
-
     private $namespacePrefix;
     
     /** @var Metadata */
@@ -27,7 +25,7 @@ class Generator
         'externalbusinesseventdefinitions',
         'apicategoryroutes'
     ];
-    
+
     private $readonlyProperties = [
         'id', 'lastModifiedDateTime', 'rowVersion'
     ];
@@ -325,7 +323,7 @@ class Generator
         
         return array_filter($classMembers);
     }
-    
+
     protected function shouldSkipPropertyInRecord(string $name): bool
     {
         return
