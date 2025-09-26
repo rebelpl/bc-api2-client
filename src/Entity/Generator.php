@@ -444,10 +444,10 @@ class Generator
             ->setExtends(Repository::class);
 
         $class->addMethod('__construct')
-            ->setBody("parent::__construct(\$client, entitySetName: '{$entitySet->getName()}', entityClass: \$entityClass);")
+            ->setBody("parent::__construct(\$client, '{$entitySet->getName()}', \$entityClass);")
             ->setParameters([
-                new PhpGenerator\Parameter('client')->setType(Client::class),
-                new PhpGenerator\Parameter('entityClass')->setType('string')->setDefaultValue(new PhpGenerator\Literal('Record::class')),
+                (new PhpGenerator\Parameter('client'))->setType(Client::class),
+                (new PhpGenerator\Parameter('entityClass'))->setType('string')->setDefaultValue(new PhpGenerator\Literal('Record::class')),
             ]);
 
         return $class;
