@@ -80,8 +80,9 @@ class FactoryTest extends TestCase
             $requests[ $id ] = $request;
         }
 
-        $this->assertEquals('$update', array_key_first($requests));
-        $this->assertEquals('$read', array_key_last($requests));
+        $keys = array_keys($requests);
+        $this->assertEquals('$update', reset($keys));
+        $this->assertEquals('$read', end($keys));
 
         $this->assertArrayHasKey('lines/0',  $requests);
         $this->assertArrayHasKey('lines/1',  $requests);
