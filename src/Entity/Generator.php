@@ -276,7 +276,7 @@ class Generator
             
             $classMembers[] = $property->isCollection() 
                 ? $this->generateRecordNavPropertyCollection($name, $targetEntityName)
-                : $this->generateRecordNavPropertySingle($name, $targetEntityName);
+                : $this->generateRecordNavPropertyRelation($name, $targetEntityName);
         }
 
         if (!empty($classMap)) {
@@ -293,11 +293,11 @@ class Generator
             ->setProtected();
     }
     
-    protected function generateRecordNavPropertySingle(string $name, string $targetEntityName): PhpGenerator\Method
+    protected function generateRecordNavPropertyRelation(string $name, string $targetEntityName): PhpGenerator\Method
     {
         return (new PhpGenerator\Method('get' . ucfirst($name)))
             ->setReturnType($this->namespacePrefix . $targetEntityName)
-            ->setBody("return \$this->get('$name');")
+            ->setBody("return \$this->getAsRelation('$name');")
             ->setReturnNullable(true);
     }
 

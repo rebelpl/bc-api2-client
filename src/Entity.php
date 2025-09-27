@@ -14,13 +14,14 @@ class Entity
     const ODATA_MEDIA_EDITLINK = '@odata.mediaEditLink';
     const NULL_GUID = '00000000-0000-0000-0000-000000000000';
 
-    protected $original = [];
     protected $primaryKey;
-    protected $classMap = [];
+    
+    protected $data = [];
+    protected $original = [];
     protected $expanded = [];
+    protected $classMap = [];
 
     public $context;
-    protected $data;
 
     public function __construct(
         array $data = [],
@@ -33,6 +34,12 @@ class Entity
         }
 
         $this->loadData($data, $context);
+    }
+    
+    public function addToClassMap(array $classMap): self
+    {
+        $this->classMap = array_merge($this->classMap, $classMap);
+        return $this;
     }
 
     public function hasExpandedProperties(): bool
@@ -150,20 +157,16 @@ class Entity
         return true;
     }
 
-    public function get(string $property, ?string $cast = null)
+    public function get(string $property)
     {
-        if ($this->isExpandedProperty($property)) {
-            if ($cast === 'collection') {
-                return $this->getAsCollection($property);
-            }
-
-            return $this->expanded[ $property ];
-        }
-
         if (!isset($this->data[ $property ])) {
+            if ($this->isExpandedProperty($property)) {
+                throw new Exception\UsedGetOnExpandedPropertyException($property);
+            }
+            
             throw isset($this->classMap[ $property ])
-                ? new Exception('Property "' . $property . '" is not expanded.')
-                : new Exception('Property "' . $property . '" does not exist.');
+                ? new Exception\PropertyIsNotExpandedException($property)
+                : new Exception\PropertyDoesNotExistException($property);
         }
 
         $value = $this->data[ $property ];
@@ -171,16 +174,36 @@ class Entity
             return null;
         }
 
-        if (in_array($cast, [ 'datetime', 'date' ])) {
-            return $this->getAsDateTime($property);
-        }
-
         return $value;
     }
+    
+    public function getAsRelation(string $property)
+    {
+        if (!isset($this->expanded[ $property ])) {
+            if (isset($this->data[ Entity::ODATA_ETAG ])) {
+                throw new Exception\PropertyIsNotExpandedException($property);
+            }
 
+            $this->expanded[ $property ] = null;
+        }
+
+        return $this->expanded[ $property ];
+    }
+
+    /**
+     * @return Collection<Entity>
+     */
     public function getAsCollection(string $property): Collection
     {
-        return $this->expanded[ $property ] ?? $this->expanded[ $property ] = new Collection();
+        if (!isset($this->expanded[ $property ])) {
+            if (isset($this->data[ Entity::ODATA_ETAG ])) {
+                throw new Exception\PropertyIsNotExpandedException($property);
+            }
+
+            $this->expanded[ $property ] = new Collection();
+        }
+        
+        return $this->expanded[ $property ];
     }
     
     public function getAsDateTime(string $property): ?Carbon
@@ -288,7 +311,7 @@ class Entity
     {
         if (empty($this->context) || empty($this->getPrimaryKey())) {
             if ($throwExceptionIfMissing) {
-                throw new Exception\MissingEntityContext($this);
+                throw new Exception\MissingEntityContextException($this);
             }
             
             return null;
@@ -314,7 +337,7 @@ class Entity
         }
     }
 
-    public function getAsStream(string $name, Client $client): StreamInterface
+    public function fetchAsStream(string $name, Client $client): StreamInterface
     {
         $url = $this->getExpandedContext($name);
         $response = $client->get($url);

@@ -2,6 +2,7 @@
 namespace Rebel\BCApi2\Request;
 
 use Rebel\BCApi2\Entity;
+use Rebel\BCApi2\Exception;
 use Rebel\BCApi2\Request;
 
 class Factory
@@ -22,7 +23,7 @@ class Factory
         foreach ($data as $name => $value) {
             if ($entity->isExpandedProperty($name)) {
                 $targetUrl = (new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()))->include($name);
-                $property = $entity->get($name);
+                $property = $entity->getAsRelation($name);
                 if ($property instanceof Entity\Collection) {
                     foreach ($value as $i => $changes) {
 
@@ -36,6 +37,9 @@ class Factory
                 elseif ($property instanceof Entity) {
                     $property->setPrimaryKey(null);
                     $requests[ $name ] = Request\Factory::updateEntity($targetUrl, $property, $value);
+                }
+                else {
+                    throw new Exception(sprintf("Invalid property type ($property): %s.", gettype($property)));
                 }
 
                 unset($data[ $name ]);
@@ -81,8 +85,7 @@ class Factory
     public static function deleteEntity(string $baseUrl, Entity $entity): Request
     {
         return new Request('DELETE',
-            new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()),
-            null,
+            new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()), null,
             $entity->getETag());
     }
 }

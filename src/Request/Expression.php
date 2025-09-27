@@ -1,7 +1,7 @@
 <?php
 namespace Rebel\BCApi2\Request;
 
-use Rebel\BCApi2\Exception\InvalidRequestExpression;
+use Rebel\BCApi2\Exception;
 
 /**
  * https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/webservices/use-filter-expressions-in-odata-uris
@@ -66,11 +66,11 @@ class Expression
         $this->value = $value;
         if (is_array($this->value)) {
             if (count($this->value) === 0) {
-                throw new InvalidRequestExpression(sprintf("Array value used for '%s %s' filter cannot be empty.", $this->field, $this->operator));
+                throw new Exception\InvalidRequestExpressionException(sprintf("Array value used for '%s %s' filter cannot be empty.", $this->field, $this->operator));
             }
             
             if (!in_array($this->operator, [ self::EQ, self::NE, self::STARTSWITH, self::ENDSWITH, self::CONTAINS ])) {
-                throw new InvalidRequestExpression(sprintf("Array value cannot be used with '%s %s' filter.", $this->field, $this->operator));
+                throw new Exception\InvalidRequestExpressionException(sprintf("Array value cannot be used with '%s %s' filter.", $this->field, $this->operator));
             }
         }
     }

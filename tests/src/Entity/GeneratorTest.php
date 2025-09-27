@@ -1,7 +1,6 @@
 <?php
 namespace Rebel\Test\BCApi2\Entity;
 
-use Nette\PhpGenerator\Method;
 use Carbon\Carbon;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Entity;
@@ -56,7 +55,7 @@ class GeneratorTest extends TestCase
         $this->assertStringContainsString('getAsCollection(', $getMethod->getBody());
     }
 
-    public function testSingleNavPropertiesAreCorrect(): void
+    public function testRelationNavPropertiesAreCorrect(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
@@ -64,7 +63,7 @@ class GeneratorTest extends TestCase
         $getMethod = $classType->getMethod('getCustomer');
         $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $getMethod->getReturnType());
         $this->assertTrue($getMethod->isReturnNullable());
-        $this->assertStringContainsString('get(', $getMethod->getBody());
+        $this->assertStringContainsString('getgetAsRelation(', $getMethod->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void
