@@ -14,10 +14,12 @@ class Entity
     const string ODATA_MEDIA_EDITLINK = '@odata.mediaEditLink';
     const string NULL_GUID = '00000000-0000-0000-0000-000000000000';
 
-    protected array $original = [];
     protected string $primaryKey;
-    protected array $classMap = [];
+    
+    protected array $data = [];
+    protected array $original = [];
     protected array $expanded = [];
+    protected array $classMap = [];
 
     public ?string $etag {
         get => isset($this->data[ Entity::ODATA_ETAG ]) ? urldecode($this->data[ Entity::ODATA_ETAG ]) : null;
@@ -26,7 +28,7 @@ class Entity
     public ?string $context;
 
     public function __construct(
-        protected array $data = [],
+        array $data = [],
         array $expanded = [],
         ?string $context = null)
     {
@@ -36,6 +38,12 @@ class Entity
         }
 
         $this->loadData($data, $context);
+    }
+    
+    public function addToClassMap(array $classMap): static
+    {
+        $this->classMap = array_merge($this->classMap, $classMap);
+        return $this;
     }
 
     public function hasExpandedProperties(): bool
@@ -141,20 +149,16 @@ class Entity
         }, $value));
     }
 
-    public function get(string $property, ?string $cast = null): mixed
+    public function get(string $property): mixed
     {
-        if ($this->isExpandedProperty($property)) {
-            if ($cast === 'collection') {
-                return $this->getAsCollection($property);
-            }
-
-            return $this->expanded[ $property ];
-        }
-
         if (!isset($this->data[ $property ])) {
+            if ($this->isExpandedProperty($property)) {
+                throw new Exception\UsedGetOnExpandedPropertyException($property);
+            }
+            
             throw isset($this->classMap[ $property ])
-                ? new Exception('Property "' . $property . '" is not expanded.')
-                : new Exception('Property "' . $property . '" does not exist.');
+                ? new Exception\PropertyIsNotExpandedException($property)
+                : new Exception\PropertyDoesNotExistException($property);
         }
 
         $value = $this->data[ $property ];
@@ -162,20 +166,36 @@ class Entity
             return null;
         }
 
-        if (in_array($cast, [ 'datetime', 'date' ])) {
-            return $this->getAsDateTime($property);
-        }
-
-        if (is_a($cast, \BackedEnum::class, true)) {
-            return $this->getAsEnum($property, $cast);
-        }
-
         return $value;
     }
+    
+    public function getAsRelation(string $property): mixed
+    {
+        if (!isset($this->expanded[ $property ])) {
+            if (isset($this->data[ Entity::ODATA_ETAG ])) {
+                throw new Exception\PropertyIsNotExpandedException($property);
+            }
 
+            $this->expanded[ $property ] = null;
+        }
+
+        return $this->expanded[ $property ];
+    }
+
+    /**
+     * @return Collection<Entity>
+     */
     public function getAsCollection(string $property): Collection
     {
-        return $this->expanded[ $property ] ?? $this->expanded[ $property ] = new Collection();
+        if (!isset($this->expanded[ $property ])) {
+            if (isset($this->data[ Entity::ODATA_ETAG ])) {
+                throw new Exception\PropertyIsNotExpandedException($property);
+            }
+
+            $this->expanded[ $property ] = new Collection();
+        }
+        
+        return $this->expanded[ $property ];
     }
 
     public function getAsEnum(string $property, string $enumClass): mixed
@@ -303,7 +323,7 @@ class Entity
     {
         if (empty($this->context) || empty($this->getPrimaryKey())) {
             if ($throwExceptionIfMissing) {
-                throw new Exception\MissingEntityContext($this);
+                throw new Exception\MissingEntityContextException($this);
             }
             
             return null;
@@ -326,7 +346,7 @@ class Entity
         }
     }
 
-    public function getAsStream(string $name, Client $client): StreamInterface
+    public function fetchAsStream(string $name, Client $client): StreamInterface
     {
         $url = $this->getExpandedContext($name);
         $response = $client->get($url);

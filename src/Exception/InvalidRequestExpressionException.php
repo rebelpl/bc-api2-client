@@ -2,7 +2,7 @@
 namespace Rebel\BCApi2\Exception;
 use Rebel\BCApi2\Exception;
 
-class InvalidRequestExpression extends Exception
+class InvalidRequestExpressionException extends Exception
 {
 
 }

@@ -2,7 +2,7 @@
 namespace Rebel\Test\BCApi2\Request;
 
 use PHPUnit\Framework\TestCase;
-use Rebel\BCApi2\Exception\InvalidRequestExpression;
+use Rebel\BCApi2\Exception;
 use Rebel\BCApi2\Request\Expression;
 use Rebel\BCApi2\Request\ODataValue;
 
@@ -63,13 +63,13 @@ class ExpressionTest extends TestCase
     
     public function testEmptyInExpressionThrowsException()
     {
-        $this->expectException(InvalidRequestExpression::class);
+        $this->expectException(Exception\InvalidRequestExpressionException::class);
         Expression::in('foo', []);
     }
 
     public function testArrayValueGreaterThanExpressionThrowsException()
     {
-        $this->expectException(InvalidRequestExpression::class);
+        $this->expectException(Exception\InvalidRequestExpressionException::class);
         Expression::greaterThan('foo', []);
     }
 }

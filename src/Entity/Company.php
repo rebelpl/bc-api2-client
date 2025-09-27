@@ -22,7 +22,7 @@ class Company extends Entity
     }
 
     public \DateTime $systemCreatedAt {
-        get => $this->get('systemCreatedAt', 'datetime');
+        get => $this->getAsDateTime('systemCreatedAt');
     }
 
     public string $systemCreatedBy {
@@ -30,7 +30,7 @@ class Company extends Entity
     }
 
     public \DateTime $systemModifiedAt {
-        get => $this->get('systemModifiedAt', 'datetime');
+        get => $this->getAsDateTime('systemModifiedAt');
     }
 
     public string $systemModifiedBy {

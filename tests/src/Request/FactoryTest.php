@@ -56,6 +56,9 @@ class FactoryTest extends TestCase
                 'name' => 'John Doe',
             ]
         ], [ 'lines', 'customer' ]);
+        
+        $this->assertTrue($entity->isExpandedProperty('lines'));
+        $this->assertTrue($entity->isExpandedProperty('customer'));
 
         $data = [
             'name' => 'Another Name',

@@ -105,6 +105,9 @@ foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
     echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
+    foreach ($salesOrder->getAsCollection('salesOrderLines') as $line) {
+        echo " --- {$line->get('sequence')}:\t{$line->get('lineObjectNumber')} x {$line->get('quantity')}";
+    }
 }
 
 # create new salesOrder
@@ -144,8 +147,8 @@ its contents, you need to make additional call to the URL listed as @odata.media
 
 ```php
 $repository = new Rebel\BCApi2\Entity\Repository($client, 'items');
-$item = $repository->findOneBy([ 'number' => '100000' ]);
-$picture = $item->get('picture');
+$item = $repository->findOneBy([ 'number' => '100000' ], [ 'picture' ]);
+$picture = $item->getAsRelation('picture');
 
 # download to a file 
 if ($picture->get('contentType')) {
@@ -159,7 +162,7 @@ $picture->get('pictureContent')->uploadWith($client, file_get_contents('path/to/
 $repository = new Rebel\BCApi2\Entity\Repository($client, 'salesInvoices');
 $invoices = $repository->findBy([ 'isClosed' => false, 'dueDate le 2025-09-19' ]);
 foreach ($invoices as $invoice) {
-    file_put_contents('path/to/' . $invoice->get('number') . '.pdf', $invoice->getAsStream('pdfDocument/pdfDocumentContent'));
+    file_put_contents('path/to/' . $invoice->get('number') . '.pdf', $invoice->fetchAsStream('pdfDocument/pdfDocumentContent'));
 }
 ```
 

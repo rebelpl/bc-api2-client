@@ -53,7 +53,7 @@ class GeneratorTest extends TestCase
         $this->assertStringContainsString('getAsCollection(', $getHook->getBody());
     }
 
-    public function testSingleNavPropertiesAreCorrect(): void
+    public function testRelationNavPropertiesAreCorrect(): void
     {
         $entityType = $this->metadata->getEntityType('salesOrder');
         $classType = $this->generator->generateRecordFor($entityType, true);
@@ -63,7 +63,7 @@ class GeneratorTest extends TestCase
         $this->assertTrue($property->isNullable());
 
         $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(', $getHook->getBody());
+        $this->assertStringContainsString('getAsRelation(', $getHook->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void
