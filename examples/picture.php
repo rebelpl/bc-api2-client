@@ -16,7 +16,7 @@ $item = $repository->findOneBy([ 'number' => '100000' ]);
 echo ' - ' . $item->getNumber() . "\n";
 
 $item->expandWith('picture', $client);
-echo ' - ' . $item->picture->contentType . "\n";
+echo ' - ' . $item->getPicture()->getContentType() . "\n";
 
 $picture = file_get_contents('tests/files/picture.png');
 $item->getPicture()->getPictureContent()->uploadWith($client, $picture, $item->getPicture()->getETag());
