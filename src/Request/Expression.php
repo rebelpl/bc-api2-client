@@ -174,7 +174,21 @@ class Expression
 
     public static function and(array $expressions): string
     {
-        return join(' ' . self::AND . ' ', $expressions);
+        return join(' ' . self::AND . ' ', array_map(function ($key, $value) {
+            if ($value instanceof Expression) {
+                return $value;
+            }
+
+            if (is_int($key)) {
+                return $value;
+            }
+
+            if (is_array($value)) {
+                return Expression::in($key, $value);
+            }
+
+            return Expression::equals($key, $value);
+        }, array_keys($expressions), $expressions));
     }
 
     public static function or(array $expressions): string

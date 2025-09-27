@@ -58,7 +58,10 @@ class UriBuilder
                 $expand[] = $value;
             }
             elseif (is_string($key) && is_array($value)) {
-                $expand[] = $key . '($filter=' . $this->filterStringFromCriteria($value) . ')';
+                $filters = count($value) > 0
+                    ? '($filter=' . Expression::and($value) . ')'
+                    : '';
+                $expand[] = $key . $filters;
             }
             else {
                 throw new Exception(sprintf('Invalid expand key: %s.', $key));
@@ -88,27 +91,8 @@ class UriBuilder
 
     public function where(array $criteria): self
     {
-        $filter = $this->filterStringFromCriteria($criteria);
+        $filter = Expression::and($criteria);
         return $this->filter($filter);
-    }
-    
-    private function filterStringFromCriteria(array $criteria): string
-    {
-        return Expression::and(array_map(function ($key, $value) {
-            if ($value instanceof Expression) {
-                return $value;
-            }
-
-            if (is_int($key)) {
-                return $value;
-            }
-
-            if (is_array($value)) {
-                return Expression::in($key, $value);
-            }
-            
-            return Expression::equals($key, $value);
-        }, array_keys($criteria), $criteria));
     }
 
     public function filter(string $filter): self
