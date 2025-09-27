@@ -5,6 +5,7 @@ use Psr\Http\Message\StreamInterface;
 use Rebel\BCApi2\Entity\Collection;
 use Carbon\Carbon;
 use Rebel\BCApi2\Entity\DataStream;
+use Rebel\BCApi2\Request\Expression;
 
 class Entity
 {
@@ -337,13 +338,15 @@ class Entity
         return $this->getContext($throwExceptionIfMissing)?->include($name);
     }
     
-    public function doAction(string $name, Client $client): void
+    public function doAction(string $name, Client $client): static
     {
         $url = $this->getExpandedContext($name);
         $response = $client->post($url, '');
         if ($response->getStatusCode() !== Client::HTTP_OK) {
             throw new Exception\InvalidResponseException($response);
         }
+        
+        return $this;
     }
 
     public function fetchAsStream(string $name, Client $client): StreamInterface
@@ -355,5 +358,33 @@ class Entity
         }
 
         return $response->getBody();
+    }
+
+    private function filterToString(array $criteria): string
+    {
+        if (count($criteria) === 0) {
+            return '';
+        }
+        
+        return '($filter=' . Expression::and($criteria) . ')';
+    }
+    
+    public function expandWith(string $property, Client $client, array $criteria = []): static
+    {
+        $url = $this->getExpandedContext($property . $this->filterToString($criteria));
+        $response = $client->get($url);
+        
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
+
+        $data = json_decode($response->getBody(), true);
+        if (isset($data['value']) && is_array($data['value'])) {
+            $this->expanded[ $property ] = $this->hydrate($property, $data['value']);
+            return $this;
+        }
+
+        $this->expanded[ $property ] = $this->hydrate($property, $data);
+        return $this;
     }
 }
