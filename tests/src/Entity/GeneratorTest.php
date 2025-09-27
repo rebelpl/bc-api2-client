@@ -63,7 +63,7 @@ class GeneratorTest extends TestCase
         $getMethod = $classType->getMethod('getCustomer');
         $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $getMethod->getReturnType());
         $this->assertTrue($getMethod->isReturnNullable());
-        $this->assertStringContainsString('getgetAsRelation(', $getMethod->getBody());
+        $this->assertStringContainsString('getAsRelation(', $getMethod->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void

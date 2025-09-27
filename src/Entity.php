@@ -28,7 +28,6 @@ class Entity
         array $expanded = [],
         ?string $context = null)
     {
-        $this->data = $data;
         foreach ($expanded as $name) {
             $this->expanded[ $name ] = null;
         }
