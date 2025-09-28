@@ -328,7 +328,7 @@ class Entity
             : null;
     }
     
-    public function doAction(string $name, Client $client): static
+    public function doAction(string $name, Client $client): self
     {
         $url = $this->getExpandedContext($name);
         $response = $client->post($url, '');
@@ -359,7 +359,7 @@ class Entity
         return '($filter=' . Expression::and($criteria) . ')';
     }
     
-    public function expandWith(string $property, Client $client, array $criteria = []): static
+    public function expandWith(string $property, Client $client, array $criteria = []): self
     {
         $url = $this->getExpandedContext($property . $this->filterToString($criteria));
         $response = $client->get($url);
