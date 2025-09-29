@@ -29,11 +29,19 @@ class Entity
         array $expanded = [],
         ?string $context = null)
     {
-        foreach ($expanded as $name) {
-            $this->expanded[ $name ] = null;
-        }
-
+        $this->setExpanded($expanded);
         $this->loadData($data, $context);
+    }
+    
+    public function setExpanded(array $expanded): static
+    {
+        foreach ($expanded as $name) {
+            if (!isset($this->expanded[ $name ])) {
+                $this->expanded[ $name ] = null;
+            }
+        }
+        
+        return $this;
     }
     
     public function addToClassMap(array $classMap): self
@@ -84,7 +92,7 @@ class Entity
         return $this->data[ $this->primaryKey ] ?? null;
     }
 
-    public function loadData(array $data, ?string $context = null): void
+    public function loadData(array $data, ?string $context = null): static
     {
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->context = $context;
@@ -117,6 +125,8 @@ class Entity
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
         }
+        
+        return $this;
     }
 
     private function setAsStream(string $property, string $value): void
@@ -137,11 +147,11 @@ class Entity
         $className = $this->getClassnameFor($property);
         $context = $this->getExpandedContext($property, false);
         if (!$this->arrayIsList($value)) {
-            return new $className($value, [], $context);
+            return (new $className())->loadData($value, $context);
         }
 
         return new Collection(array_map(function ($item) use ($className, $context) {
-            return new $className($item, [], $context);
+            return (new $className())->loadData($item, $context);
         }, $value));
     }
     

@@ -1,0 +1,12 @@
+{
+  "value": [
+    {
+      "subscriptionId": "270135334a7d433e9009dde078e9e29c",
+      "clientState": "testClientState",
+      "expirationDateTime": "2025-10-02T10:21:44Z",
+      "resource": "api/v2.0/companies(a7f1d29f-b084-f011-a708-6045bd956d8a)/items(015e4dd6-fc83-f011-a6f5-000d3a4b6d9d)",
+      "changeType": "updated",
+      "lastModifiedDateTime": "2025-09-29T10:22:52.363Z"
+    }
+  ]
+}

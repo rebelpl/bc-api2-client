@@ -4,22 +4,30 @@ namespace Rebel\BCApi2\Metadata;
 class EntityType
 {
     private $name;
+    private $primaryKey;
     private $properties;
     private $navigationProperties;
 
     public function __construct(
         string $name,
+        string $primaryKey,
         array $properties = [],
         array $navigationProperties = [])
     {
         $this->navigationProperties = $navigationProperties;
         $this->properties = $properties;
         $this->name = $name;
+        $this->primaryKey = $primaryKey;
     }
 
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return $this->primaryKey;
     }
 
     /**

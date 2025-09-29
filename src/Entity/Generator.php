@@ -208,6 +208,11 @@ class Generator
         $class = (new PhpGenerator\ClassType($className))
             ->setExtends(Entity::class);
 
+        $class->addMember((new PhpGenerator\Property('primaryKey'))
+            ->setValue($entityType->getPrimaryKey())
+            ->setType('string')
+            ->setProtected());
+
         foreach ($this->generateRecordProperties($entityType, $isUpdateable) as $classMembers) {
             foreach ($classMembers as $member) {
                 $class->addMember($member);

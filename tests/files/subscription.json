@@ -1,0 +1,16 @@
+{
+  "@odata.context": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/$metadata#subscriptions/$entity",
+  "@odata.etag": "W/\"JzIwOzEzNjUyMjI4MDE5MzMzMjc5OTExMTswMDsn\"",
+  "subscriptionId": "270135334a7d433e9009dde078e9e29c",
+  "notificationUrl": "https://test.url/test/webhook",
+  "resource": "api/v2.0/companies(a7f1d29f-b084-f011-a708-6045bd956d8a)/items",
+  "timestamp": 332571277,
+  "userId": "0f72f0c3-0aaf-47ea-a532-e913a02e59ff",
+  "lastModifiedDateTime": "2025-09-29T09:58:45Z",
+  "clientState": "testClientState",
+  "expirationDateTime": "2025-10-02T09:58:45Z",
+  "systemCreatedAt": "2025-09-29T09:58:46.197Z",
+  "systemCreatedBy": "0f72f0c3-0aaf-47ea-a532-e913a02e59ff",
+  "systemModifiedAt": "2025-09-29T09:58:46.197Z",
+  "systemModifiedBy": "0f72f0c3-0aaf-47ea-a532-e913a02e59ff"
+}

@@ -32,6 +32,9 @@ class Factory
         $entityTypes = $xml->xpath('//edm:Schema/edm:EntityType');
         foreach ($entityTypes as $entityType) {
             $name = (string)$entityType['Name'];
+            
+            // Extract Primary Key
+            $key = (string)$entityType->Key->PropertyRef['Name']; 
 
             // Extract Properties
             $properties = [];
@@ -58,7 +61,7 @@ class Factory
                 );
             }
 
-            $metadata->addEntityType(new EntityType($name, $properties, $navigationProperties));
+            $metadata->addEntityType(new EntityType($name, $key, $properties, $navigationProperties));
         }
 
         // Extract EntitySets

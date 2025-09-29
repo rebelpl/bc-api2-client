@@ -201,14 +201,14 @@ class Repository
         $entity->loadData($data, $this->baseUrl);
     }
 
-    public function update(Entity $entity): void
+    public function update(Entity $entity, bool $forceEmptyUpdate = false): void
     {
         if (empty($entity->getETag())) {
             throw new \InvalidArgumentException('Record not yet persisted.');
         }
 
         $data = $entity->toUpdate(true);
-        if (empty($data)) {
+        if (empty($data) && !$forceEmptyUpdate) {
             return;
         }
 
@@ -271,8 +271,8 @@ class Repository
 
     private function hydrate(array $data, array $expanded): Entity
     {
-        return new $this->entityClass($data,
-            $this->normalizeExpandedToArray($expanded),
-            $this->baseUrl);
+        return new $this->entityClass()
+            ->setExpanded($this->normalizeExpandedToArray($expanded))
+            ->loadData($data, $this->baseUrl);
     }
 }
