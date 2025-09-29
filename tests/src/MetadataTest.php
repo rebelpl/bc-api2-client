@@ -31,6 +31,7 @@ class MetadataTest extends TestCase
         $this->assertCount(87, $this->metadata->getEntityTypes());
         $entityType = $this->metadata->getEntityType('Microsoft.NAV.item', true);
         $this->assertEquals('item', $entityType->getName());
+        $this->assertEquals('id', $entityType->getPrimaryKey());
 
         $this->assertCount(22, $entityType->getProperties());
         $this->assertCount(8, $entityType->getNavigationProperties());
@@ -62,6 +63,9 @@ class MetadataTest extends TestCase
         $entityType = $this->metadata->getEntityType('salesOrder', false);
         $property = $entityType->getProperty('orderDate');
         $this->assertEquals('Edm.Date', $property->getType());
+        
+        $entityType = $this->metadata->getEntityType('subscriptions');
+        $this->assertEquals('subscriptionId', $entityType->getPrimaryKey());
     }
 
     public function testEntitySetCapabilities()

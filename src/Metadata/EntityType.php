@@ -5,6 +5,7 @@ readonly class EntityType
 {
     public function __construct(
         private string $name,
+        private string $primaryKey,
         private array $properties = [],
         private array $navigationProperties = [])
     {
@@ -13,6 +14,11 @@ readonly class EntityType
     public function getName(): string
     {
         return $this->name;
+    }
+
+    public function getPrimaryKey(): string
+    {
+        return $this->primaryKey;
     }
 
     /**
