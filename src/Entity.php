@@ -33,7 +33,7 @@ class Entity
         $this->loadData($data, $context);
     }
     
-    public function setExpanded(array $expanded): static
+    public function setExpanded(array $expanded): self
     {
         foreach ($expanded as $name) {
             if (!isset($this->expanded[ $name ])) {
@@ -92,7 +92,7 @@ class Entity
         return $this->data[ $this->primaryKey ] ?? null;
     }
 
-    public function loadData(array $data, ?string $context = null): static
+    public function loadData(array $data, ?string $context = null): self
     {
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->context = $context;

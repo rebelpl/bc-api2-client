@@ -210,7 +210,6 @@ class Generator
 
         $class->addMember((new PhpGenerator\Property('primaryKey'))
             ->setValue($entityType->getPrimaryKey())
-            ->setType('string')
             ->setProtected());
 
         foreach ($this->generateRecordProperties($entityType, $isUpdateable) as $classMembers) {
