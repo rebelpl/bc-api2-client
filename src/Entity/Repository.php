@@ -271,7 +271,7 @@ class Repository
 
     private function hydrate(array $data, array $expanded): Entity
     {
-        return new $this->entityClass()
+        return (new $this->entityClass())
             ->setExpanded($this->normalizeExpandedToArray($expanded))
             ->loadData($data, $this->baseUrl);
     }
