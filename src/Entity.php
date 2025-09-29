@@ -33,12 +33,20 @@ class Entity
         array $expanded = [],
         ?string $context = null)
     {
+        $this->setExpanded($expanded);
+        $this->loadData($data, $context);
+    }
+    
+    public function setExpanded(array $expanded): static
+    {
         foreach ($expanded as $name) {
             if ($name instanceof \UnitEnum) $name = $name->name;
-            $this->expanded[ $name ] = null;
+            if (!isset($this->expanded[ $name ])) {
+                $this->expanded[ $name ] = null;
+            }
         }
-
-        $this->loadData($data, $context);
+        
+        return $this;
     }
     
     public function addToClassMap(array $classMap): static
@@ -89,7 +97,7 @@ class Entity
         return $this->data[ $this->primaryKey ] ?? null;
     }
 
-    public function loadData(array $data, ?string $context = null): void
+    public function loadData(array $data, ?string $context = null): static
     {
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->context = $context;
@@ -122,6 +130,8 @@ class Entity
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->original = $this->data;
         }
+        
+        return $this;
     }
 
     private function setAsStream(string $property, string $value): void
@@ -129,7 +139,7 @@ class Entity
         $this->data[ $property ] = new DataStream($value);
     }
 
-    private function hydrate(string $property, mixed $value): mixed
+    private function hydrate(string $property, mixed $value): Entity|Collection|null
     {
         if (is_null($value)) {
             return null;
@@ -142,11 +152,11 @@ class Entity
         $className = $this->getClassnameFor($property);
         $context = $this->getExpandedContext($property, false);
         if (!array_is_list($value)) {
-            return new $className($value, [], $context);
+            return new $className()->loadData($value, $context);
         }
 
         return new Collection(array_map(function ($item) use ($className, $context) {
-            return new $className($item, [], $context);
+            return new $className()->loadData($item, $context);
         }, $value));
     }
 

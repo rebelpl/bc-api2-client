@@ -68,6 +68,11 @@ class Client
 
         return "companies($this->companyId)";
     }
+    
+    public function getApiRoute(): string
+    {
+        return $this->apiRoute;
+    }
 
     public function buildUri(string $uri): Psr7\Uri
     {

@@ -48,7 +48,7 @@ class Factory
 
         $request = new Request('PATCH',
             new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()),
-            body: json_encode($data),
+            body: json_encode($data, JSON_FORCE_OBJECT),
             etag: $entity->getETag());
 
         if (!$entity->hasExpandedProperties()) {
