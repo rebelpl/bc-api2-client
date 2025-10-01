@@ -31,6 +31,7 @@ class Client
 
     protected $defaultHeaders = [];
     private $accessToken;
+    private $environment;
     private $companyId;
 
     /**
@@ -47,9 +48,11 @@ class Client
     {
         $this->companyId = $companyId;
         $this->accessToken = $accessToken;
+        $this->environment = $environment;
+        
         $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
         $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
-            . "/$environment/api/";
+            . "/$this->environment/api/";
         $this->apiRoute = trim($apiRoute ?: self::DEFAULT_API_ROUTE, '/');
 
         $this->defaultHeaders = [
@@ -128,28 +131,24 @@ class Client
     }
 
     /**
-     * @return Entity\Company[]
+     * @return Company[]
      * @throws Exception
      */
     public function getCompanies(): array
     {
         return (new Repository($this,
-            'companies',
-            Company::class,
-            false))
+            'companies', Company::class, false))
             ->findAll();
     }
 
     /**
-     * @return Entity\ApiRoute[]
+     * @return ApiRoute[]
      * @throws Exception
      */
     public function getApiRoutes(): array
     {
         return (new Repository($this,
-            'apicategoryroutes',
-            ApiRoute::class,
-            false))
+            'apicategoryroutes', ApiRoute::class, false))
             ->findAll();
     }
 
@@ -175,5 +174,23 @@ class Client
         }
 
         return $response->getBody()->getContents();
+    }
+    
+    public function getEnvironment(): string
+    {
+        return $this->environment;
+    }
+    
+    public function getActiveCompany(): ?Company
+    {
+        if (empty($this->companyId)) {
+            return null;
+        }
+        
+        /** @var Repository<Company> $repository */
+        $repository = new Repository($this,
+            'companies', Company::class, false);
+        
+        return $repository->get($this->companyId);
     }
 }

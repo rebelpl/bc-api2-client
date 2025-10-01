@@ -6,4 +6,4 @@ composer.lock
 composer.phar
 .phpunit.result.cache
 bin/test.php
-tests/config.php
+examples/config/config.php
