@@ -4,7 +4,7 @@ use Rebel\BCApi2\Entity\SalesInvoice;
 
 chdir(__DIR__ . '/../');
 
-// connect using tests/config.php credentials
+// connect using config/config.php credentials
 $client = include(__DIR__ . '/connect/client-credentials.php');
 # $client = include(__DIR__ . '/connect/authorization-code.php');
 
