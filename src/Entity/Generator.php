@@ -250,6 +250,7 @@ class Generator
         return (new PhpGenerator\Method('do' . ucfirst($name)))
             ->setBody("\$this->doAction('$prefix.$name', \$client);")
             ->setReturnType('void')
+            ->setPublic()
             ->setParameters([
                 (new PhpGenerator\Parameter('client'))
                     ->setType(Client::class)
@@ -301,6 +302,7 @@ class Generator
     {
         return (new PhpGenerator\Method('get' . ucfirst($name)))
             ->setReturnType($this->namespacePrefix . $targetEntityName)
+            ->setPublic()
             ->setBody("return \$this->getAsRelation('$name');")
             ->setReturnNullable(true);
     }
@@ -309,6 +311,7 @@ class Generator
     {
         return (new PhpGenerator\Method('get' . ucfirst($name)))
             ->setReturnType(Entity\Collection::class)
+            ->setPublic()
             ->setBody("return \$this->getAsCollection('$name');")
             ->setReturnNullable(false)
             ->addComment("@return Entity\\Collection|{$targetEntityName}[]");
@@ -373,6 +376,7 @@ class Generator
         // getter
         $methods[] = (new PhpGenerator\Method('get' . ucfirst($name)))
             ->setReturnType(Carbon::class)
+            ->setPublic()
             ->setBody($propertyType === 'Edm.Date'
                 ? "return \$this->getAsDate('$name');"
                 : "return \$this->getAsDateTime('$name');")
@@ -382,6 +386,7 @@ class Generator
         if ($isUpdateable) {
             $method = (new PhpGenerator\Method('set' . ucfirst($name)))
                 ->setReturnType('self')
+                ->setPublic()
                 ->setBody($propertyType === 'Edm.Date'
                     ? "\$this->setAsDate('$name', \$value);"
                     : "\$this->setAsDateTime('$name', \$value);")
@@ -440,6 +445,7 @@ class Generator
         // getter
         $methods[] = (new PhpGenerator\Method('get' . ucfirst($name)))
             ->setReturnType($phpType)
+            ->setPublic()
             ->setBody("return \$this->get('$name');")
             ->setReturnNullable($isNullable);
 
@@ -447,6 +453,7 @@ class Generator
         if ($isUpdateable) {
             $method = (new PhpGenerator\Method('set' . ucfirst($name)))
                 ->setReturnType('self')
+                ->setPublic()
                 ->setBody("\$this->set('$name', \$value);")
                 ->addBody("\nreturn \$this;");
 
