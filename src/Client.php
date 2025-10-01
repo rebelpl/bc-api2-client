@@ -34,14 +34,14 @@ class Client
      */
     public function __construct(
         private readonly string  $accessToken,
-        string  $environment,
+        private readonly string  $environment,
         ?string $apiRoute = null,
         private readonly ?string $companyId = null,
         array                    $options = [])
     {
         $this->client = $options['httpClient'] ?? new GuzzleHttp\Client($options);
         $this->baseUrl = rtrim($options['baseUrl'] ?? self::BASE_URL, '/')
-            . "/$environment/api/";
+            . "/$this->environment/api/";
         $this->apiRoute = trim($apiRoute ?: self::DEFAULT_API_ROUTE, '/');
 
         $this->defaultHeaders = [
@@ -120,7 +120,7 @@ class Client
     }
 
     /**
-     * @return Entity\Company[]
+     * @return Company[]
      * @throws Exception
      */
     public function getCompanies(): array
@@ -133,7 +133,7 @@ class Client
     }
 
     /**
-     * @return Entity\ApiRoute[]
+     * @return ApiRoute[]
      * @throws Exception
      */
     public function getApiRoutes(): array
@@ -167,5 +167,25 @@ class Client
         }
 
         return $response->getBody()->getContents();
+    }
+    
+    public function getEnvironment(): string
+    {
+        return $this->environment;
+    }
+    
+    public function getActiveCompany(): ?Company
+    {
+        if (empty($this->companyId)) {
+            return null;
+        }
+        
+        /** @var Repository<Company> $repository */
+        $repository = new Repository($this,
+            entitySetName: 'companies',
+            entityClass: Company::class,
+            isCompanyResource: false);
+        
+        return $repository->get($this->companyId);
     }
 }
