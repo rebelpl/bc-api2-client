@@ -149,7 +149,7 @@ class Repository
     public function reload(Entity $entity): void
     {
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+            (new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey()))
                 ->expand($entity->getExpandedProperties()));
 
         $response = $this->client->call($request);
