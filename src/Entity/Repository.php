@@ -138,13 +138,24 @@ class Repository
         
         return $result;
     }
-
-    /**
-     * @return ?T
-     */
-    public function find(string $primaryKey, array $expanded = []): ?Entity
+    
+    public function reload(Entity $entity): void
     {
-        return $this->get($primaryKey, $expanded);
+        $request = new Request('GET',
+            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+                ->expand($entity->getExpandedProperties()));
+
+        $response = $this->client->call($request);
+        if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
+            throw new Exception\InvalidResponseException($response);
+        }
+
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
+
+        $data = json_decode($response->getBody(), true);
+        $entity->loadData($data, $this->baseUrl);
     }
 
     /**

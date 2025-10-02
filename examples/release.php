@@ -14,4 +14,8 @@ $repository = new SalesOrder\Repository($client);
 echo $repository->getBaseUrl() . "\n";
 
 $salesOrder = $repository->findOneBy([ 'no' => 'ZS-1516104' ]);
+echo $salesOrder->get('status') . " -> ";
 $salesOrder->doAction('Microsoft.NAV.release', $client);
+
+$repository->reload($salesOrder);
+echo $salesOrder->get('status') . "\n";
