@@ -255,17 +255,20 @@ class Entity
         $changes = [];
         foreach ($this->data as $property => $value) {
             if ($value instanceof Entity || $value instanceof Collection) {
-                $changes[ $property ] = $value->toUpdate() ?: null;
+                if ($expandedChanges = $value->toUpdate()) {
+                    $changes[ $property ] = $expandedChanges;
+                }
+                
                 continue;
             }
 
             $original = $this->original[ $property ] ?? null;
-            $changes[ $property ] = $value !== $original
-                ? $value
-                : null;
+            if ($value !== $original) {
+                $changes[ $property ] = $value;
+            }
         }
         
-        return array_filter($changes);
+        return $changes;
     }
     
     public function getContext(bool $throwExceptionIfMissing = true): ?Request\UriBuilder
