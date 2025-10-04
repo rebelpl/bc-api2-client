@@ -9,11 +9,8 @@ use Rebel\BCApi2\Metadata;
 
 class GeneratorTest extends TestCase
 {
-    /** @var Generator */
-    private $generator;
-    
-    /** @var Metadata */
-    private $metadata;
+    private Generator $generator;
+    private Metadata $metadata;
     
     protected function setUp(): void
     {
@@ -24,73 +21,80 @@ class GeneratorTest extends TestCase
     
     public function testDateAndDateTimePropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
-        $getMethod = $classType->getMethod('getOrderDate');
-        $this->assertStringContainsString('getAsDate(', $getMethod->getBody());
-        $this->assertEquals(Carbon::class, $getMethod->getReturnType());
-        $this->assertTrue($getMethod->isReturnNullable());
+        $property = $classType->getProperty('orderDate');
+        $this->assertEquals(Carbon::class, $property->getType());
+        $this->assertTrue($property->isNullable());
 
-        $setMethod = $classType->getMethod('setOrderDate');
-        $this->assertStringContainsString('setAsDate(', $setMethod->getBody());
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'orderDate\', \'date\')', $getHook->getBody());
 
-        $setMethod = $classType->getMethod('setLastModifiedDateTime');
-        $this->assertStringContainsString('setAsDateTime(', $setMethod->getBody());
-        
-        $param = $setMethod->getParameters()['value'];
-        $this->assertEquals(\DateTime::class, $param->getType());
-        $this->assertTrue($param->isNullable());
+        $setHook = $property->getHook('set');
+        $this->assertStringContainsString('set(\'orderDate\', $value);', $setHook->getBody());
+
+        $property = $classType->getProperty('lastModifiedDateTime');
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'lastModifiedDateTime\', \'datetime\')', $getHook->getBody());
     }
 
     public function testCollectionNavPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
-        $getMethod = $classType->getMethod('getSalesOrderLines');
-        $this->assertEquals(Entity\Collection::class, $getMethod->getReturnType());
-        $this->assertFalse($getMethod->isReturnNullable());
-
-        $this->assertStringContainsString('getAsCollection(', $getMethod->getBody());
+        $property = $classType->getProperty('salesOrderLines');
+        $this->assertEquals(Entity\Collection::class, $property->getType());
+        $this->assertFalse($property->isNullable());
+        
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'salesOrderLines\', \'collection\')', $getHook->getBody());
     }
 
     public function testRelationNavPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
+        
+        $property = $classType->getProperty('customer');
+        $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $property->getType());
+        $this->assertTrue($property->isNullable());
 
-        $getMethod = $classType->getMethod('getCustomer');
-        $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $getMethod->getReturnType());
-        $this->assertTrue($getMethod->isReturnNullable());
-        $this->assertStringContainsString('getAsRelation(', $getMethod->getBody());
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'customer\')', $getHook->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
-        $getMethod = $classType->getMethod('getStatus');
-        $this->assertEquals('string', $getMethod->getReturnType());
-        $this->assertTrue($getMethod->isReturnNullable());
-        $this->assertStringContainsString('get(', $getMethod->getBody());
+        $property = $classType->getProperty('status');
+        $this->assertEquals('Rebel\\BCApi2\\Entity\\Enums\\SalesOrderEntityBufferStatus', $property->getType());
+        $this->assertTrue($property->isNullable());
+
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'status\', Enums\\SalesOrderEntityBufferStatus::class)', $getHook->getBody());
     }
 
-    public function setMethodDoesNotExistForIDProperty(): void
+    public function setHookDoesNotExistForIDProperty(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
-        $this->assertNull($classType->getMethod('setId'));
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
+        
+        $property = $classType->getProperty('id');
+        $setHook = $property->getHook('set');
+        $this->assertNull($setHook);
     }
     
     public function testBoundActionsAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRepositoryFor($entitySet);
         
-        $method = $classType->getMethod('doShipAndInvoice');
+        $method = $classType->getMethod('shipAndInvoice');
         $this->assertEquals('void', $method->getReturnType());
-        $this->assertStringContainsString("doAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
+        $this->assertStringContainsString("callBoundAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
     }
 }

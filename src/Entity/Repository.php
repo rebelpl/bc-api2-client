@@ -12,25 +12,18 @@ use Rebel\BCApi2\Request\Batch;
  */
 class Repository
 {
-    /** @var Client */
-    protected $client;
-
-    /** @var string */
-    protected $entityClass = Entity::class;
-    private $baseUrl;
-    private $expandedByDefault = [];
+    private readonly string $baseUrl;
+    private array $expandedByDefault = [];
 
     /**
      * @param class-string<T> $entityClass
      */
     public function __construct(
-        Client $client,
+        protected readonly Client $client,
         string $entitySetName,
-        string $entityClass = Entity::class,
-        bool   $isCompanyResource = true)
+        protected readonly string $entityClass = Entity::class,
+        bool             $isCompanyResource = true)
     {
-        $this->entityClass = $entityClass;
-        $this->client = $client;
         if (!class_exists($this->entityClass)) {
             throw new Exception("Class '$this->entityClass' does not exist.");
         }
@@ -50,7 +43,7 @@ class Repository
         return $this->baseUrl;
     }
     
-    public function setExpandedByDefault(array $expanded): self
+    public function setExpandedByDefault(array $expanded): static
     {
         $this->expandedByDefault = $expanded;
         return $this;
@@ -61,7 +54,7 @@ class Repository
      */
     public function findOneBy(array $criteria, array $expanded = []): ?Entity
     {
-        $result = $this->findBy($criteria, null, 1, null, $expanded);
+        $result = $this->findBy($criteria, size: 1, expanded: $expanded);
         return !empty($result) ? $result[0] : null;
     }
 
@@ -70,7 +63,7 @@ class Repository
      */
     public function findAll($orderBy = null, array $expanded = []): array
     {
-        return $this->findBy([], $orderBy, null, null, $expanded);
+        return $this->findBy([], $orderBy, expanded: $expanded);
     }
 
     /**
@@ -80,7 +73,7 @@ class Repository
     {
         $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
-            (new Request\UriBuilder($this->baseUrl))
+            new Request\UriBuilder($this->baseUrl)
                 ->where($criteria)
                 ->orderBy($orderBy)
                 ->top($size)
@@ -108,7 +101,7 @@ class Repository
     {
         $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
-            (new Request\UriBuilder($this->baseUrl, $primaryKey))
+            new Request\UriBuilder($this->baseUrl, $primaryKey)
                 ->expand($expanded));
 
         $response = $this->client->call($request);
@@ -124,7 +117,7 @@ class Repository
         return $this->hydrate($data, $expanded);
     }
     
-    private function normalizeExpandedToArray($expanded): array
+    private function normalizeExpandedToArray(mixed $expanded): array
     {
         if (!is_iterable($expanded)) {
             return [ (string)$expanded ];
@@ -149,7 +142,7 @@ class Repository
     public function reload(Entity $entity): void
     {
         $request = new Request('GET',
-            (new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey()))
+            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
                 ->expand($entity->getExpandedProperties()));
 
         $response = $this->client->call($request);
@@ -200,7 +193,7 @@ class Repository
             throw new \InvalidArgumentException('Record already persisted.');
         }
 
-        $data = $entity->toUpdate(true);
+        $data = $entity->toUpdate();
         $request = Request\Factory::createEntity($this->baseUrl, $entity, $data);
 
         $response = $this->client->call($request);
@@ -218,7 +211,7 @@ class Repository
             throw new \InvalidArgumentException('Record not yet persisted.');
         }
 
-        $data = $entity->toUpdate(true);
+        $data = $entity->toUpdate();
         if (empty($data) && !$forceEmptyUpdate) {
             return;
         }
@@ -282,8 +275,24 @@ class Repository
 
     private function hydrate(array $data, array $expanded): Entity
     {
-        return (new $this->entityClass())
-            ->setExpanded($this->normalizeExpandedToArray($expanded))
-            ->loadData($data, $this->baseUrl);
+        /** @var Entity $entity */
+        $entity = new $this->entityClass(expanded: $expanded); 
+        return $entity->loadData($data, $this->baseUrl);
+    }
+
+    /**
+     * @todo $batch call
+     */
+    public function callBoundAction(string $action, Entity $entity, $reloadAfterwards = true): void
+    {
+        $url = $entity->getExpandedContext($action);
+        $response = $this->client->post($url, '');
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
+        
+        if ($reloadAfterwards) {
+            $this->reload($entity);
+        }
     }
 }

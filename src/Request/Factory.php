@@ -10,9 +10,9 @@ class Factory
     public static function createEntity(string $baseUrl, ?Entity $entity, array $data): Request
     {
         return new Request('POST',
-            (new Request\UriBuilder($baseUrl))
+            new Request\UriBuilder($baseUrl)
                 ->expand($entity ? $entity->getExpandedProperties() : []),
-            json_encode($data));
+            body: json_encode($data));
     }
 
     public static function updateEntity(string $baseUrl, Entity $entity, array $data): Request
@@ -22,8 +22,8 @@ class Factory
         $requests = [];
         foreach ($data as $name => $value) {
             if ($entity->isExpandedProperty($name)) {
-                $targetUrl = (new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()))->include($name);
-                $property = $entity->getAsRelation($name);
+                $targetUrl = new Request\UriBuilder($baseUrl, $entity->getPrimaryKey())->include($name);
+                $property = $entity->get($name);
                 if ($property instanceof Entity\Collection) {
                     foreach ($value as $i => $changes) {
 
@@ -48,8 +48,8 @@ class Factory
 
         $request = new Request('PATCH',
             new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()),
-            json_encode($data, JSON_FORCE_OBJECT),
-            $entity->getETag());
+            body: json_encode($data, JSON_FORCE_OBJECT),
+            etag: $entity->getETag());
 
         if (!$entity->hasExpandedProperties()) {
             return $request;
@@ -67,7 +67,7 @@ class Factory
         }
 
         $request = new Request('GET',
-            (new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()))
+            new Request\UriBuilder($baseUrl, $entity->getPrimaryKey())
                 ->expand($entity->getExpandedProperties()));
 
         // read the entity back from database
@@ -85,7 +85,7 @@ class Factory
     public static function deleteEntity(string $baseUrl, Entity $entity): Request
     {
         return new Request('DELETE',
-            new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()), null,
-            $entity->getETag());
+            new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()),
+            etag: $entity->getETag());
     }
 }

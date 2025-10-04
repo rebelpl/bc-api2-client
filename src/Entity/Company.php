@@ -1,46 +1,53 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
+use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 
 class Company extends Entity
 {
-    public function getId(): string
-    {
-        return $this->get('id');
+    protected string $primaryKey = 'id';
+    
+    public string $id {
+        get => $this->get('id', 'guid');
     }
 
-    public function getName(): string
-    {
-        return $this->get('name');
+    public string $name {
+        get => $this->get('name');
     }
 
-    public function getDisplayName(): string
-    {
-        return $this->get('displayName');
+    public string $displayName {
+        get => $this->get('displayName');
     }
 
-    public function getSystemVersion(): string
-    {
-        return $this->get('systemVersion');
+    public string $systemVersion {
+        get => $this->get('systemVersion');
     }
 
-    public function getSystemCreatedAt(): \DateTime {
-        return $this->getAsDateTime('systemCreatedAt', 'datetime');
+    public \DateTime $systemCreatedAt {
+        get => $this->get('systemCreatedAt', 'datetime');
     }
 
-    public function getSystemCreatedBy(): string
-    {
-        return $this->get('systemCreatedBy');
+    public string $systemCreatedBy {
+        get => $this->get('systemCreatedBy', 'guid');
     }
 
-    public function getSystemModifiedAt(): \DateTime
-    {
-        return $this->getAsDateTime('systemModifiedAt', 'datetime');
+    public \DateTime $systemModifiedAt {
+        get => $this->get('systemModifiedAt', 'datetime');
     }
 
-    public function getSystemModifiedBy(): string
+    public string $systemModifiedBy {
+        get => $this->get('systemModifiedBy', 'guid');
+    }
+
+    /**
+     * @return Repository<Company>
+     */
+    public static function getRepository(Client $client, ?string $entityClass = null): Repository
     {
-        return $this->get('systemModifiedBy');
+        return new Repository($client,
+            entitySetName: 'companies',
+            entityClass: $entityClass ?? static::class,
+            isCompanyResource: false);
     }
 }

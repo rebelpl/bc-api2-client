@@ -88,21 +88,21 @@ class RepositoryTest extends TestCase
         foreach ($result as $salesOrder) {
             $this->assertInstanceOf(Entity::class, $salesOrder);
             $this->assertNotEmpty($salesOrder->get('number'));
-            $this->assertInstanceOf(\DateTime::class, $salesOrder->getAsDate('orderDate'));
+            $this->assertInstanceOf(\DateTime::class, $salesOrder->get('orderDate', 'date'));
 
-            $lastModifiedDateTime = $salesOrder->getAsDateTime('lastModifiedDateTime');
+            $lastModifiedDateTime = $salesOrder->get('lastModifiedDateTime', 'datetime');
             $this->assertGreaterThan(new \DateTime('2020-12-31'), $lastModifiedDateTime);
             $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)', $salesOrder->get('id')), (string)$salesOrder->getContext());
 
-            $this->assertGreaterThan(0, count($salesOrder->getAsCollection('salesOrderLines')));
-            foreach ($salesOrder->getAsCollection('salesOrderLines') as $salesOrderLine) {
+            $this->assertGreaterThan(0, count($salesOrder->get('salesOrderLines', 'collection')));
+            foreach ($salesOrder->get('salesOrderLines', 'collection') as $salesOrderLine) {
                 $this->assertInstanceOf(Entity::class, $salesOrderLine);
                 $this->assertNotEmpty($salesOrderLine->get('description'));
                 $this->assertGreaterThan(0, $salesOrderLine->get('quantity'));
                 $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)/salesOrderLines(%s)', $salesOrder->get('id'), $salesOrderLine->get('id')), (string)$salesOrderLine->getContext());
             }
 
-            $customer = $salesOrder->getAsRelation('customer');
+            $customer = $salesOrder->get('customer');
             $this->assertInstanceOf(Entity::class, $customer);
             $this->assertNotEmpty($customer->get('displayName'));
             $this->assertEquals(sprintf('companies(test-company-id)/salesOrders(%s)/customer(%s)', $salesOrder->get('id'), $customer->get('id')), (string)$customer->getContext());
@@ -130,7 +130,7 @@ class RepositoryTest extends TestCase
         $customer = $result[0];
         $this->assertInstanceOf(Entity::class, $customer);
         
-        $addresses = $customer->getAsCollection('shipToAddresses');
+        $addresses = $customer->get('shipToAddresses', 'collection');
         $this->assertCount(1, $addresses);
         $this->assertInstanceOf(Entity::class, $addresses[0]);
         $this->assertEquals('196238', $addresses[0]->get('code'));

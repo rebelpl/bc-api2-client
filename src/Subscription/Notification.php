@@ -15,7 +15,7 @@ class Notification extends Entity
     }
 
     public Carbon $expirationDateTime {
-        get => $this->getAsDateTime('expirationDateTime');
+        get => $this->get('expirationDateTime', 'datetime');
     }
     
     public string $resource {
@@ -27,7 +27,7 @@ class Notification extends Entity
     }
 
     public Carbon $lastModifiedDateTime {
-        get => $this->getAsDateTime('lastModifiedDateTime');
+        get => $this->get('lastModifiedDateTime', 'datetime');
     }
     
     public static function createSetFromStream($input = 'php://input'): array
@@ -35,7 +35,7 @@ class Notification extends Entity
         $notifications = [];
         $body = json_decode(file_get_contents($input), true);
         foreach ($body['value'] as $data) {
-            $notifications[] = new Notification($data);
+            $notifications[] = new Notification()->loadData($data);
         }
         
         return $notifications;
