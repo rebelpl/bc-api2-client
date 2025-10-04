@@ -32,7 +32,7 @@ class GeneratorTest extends TestCase
         $this->assertStringContainsString('get(\'orderDate\', \'date\')', $getHook->getBody());
 
         $setHook = $property->getHook('set');
-        $this->assertStringContainsString('set(\'orderDate\', $value);', $setHook->getBody());
+        $this->assertStringContainsString('set(\'orderDate\', $value, \'date\');', $setHook->getBody());
 
         $property = $classType->getProperty('lastModifiedDateTime');
         $getHook = $property->getHook('get');

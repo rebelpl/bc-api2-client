@@ -374,13 +374,13 @@ class Generator
 
         $cast = $this->getPropertyCast($propertyType);
         $property->addHook('get')
-            ->setBody($cast ? '$this->get(?, ?)' : '$this->get(?)', array_filter([
-                $name, $cast
-            ]), true);
+            ->setBody($cast ? '$this->get(?, ?)' : '$this->get(?)',
+                array_filter([ $name, $cast ]), true);
 
         if ($isUpdateable) {
             $property->addHook('set')
-                ->setBody('$this->set(?, $value);', [ $name ]);
+                ->setBody($cast ? '$this->set(?, $value, ?);' : '$this->set(?, $value);',
+                    array_filter([ $name, $cast ]));
         }
 
         return $property;
