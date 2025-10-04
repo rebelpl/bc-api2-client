@@ -15,20 +15,20 @@ class EntityTest extends TestCase
     public function setUp(): void
     {
         $data = json_decode(file_get_contents('tests/files/customer.json'), true);
-        $this->customer = new Entity($data);
+        $this->customer = new Entity()->loadData($data);
 
         $contents = json_decode(file_get_contents('tests/files/salesOrders.json'), true);
         foreach ($contents['value'] as $data) {
-            $this->salesOrders[] = new Entity($data, [ 'customer', 'salesOrderLines', 'pdfDocument' ]);
+            $this->salesOrders[] = new Entity()->loadData($data);
         }
     }
 
     public function testGetAsDateAndTime(): void
     {
-        $this->assertInstanceOf(\DateTime::class, $this->customer->getAsDateTime('lastModifiedDateTime'));
+        $this->assertInstanceOf(\DateTime::class, $this->customer->get('lastModifiedDateTime', 'datetime'));
         foreach ($this->salesOrders as $entity) {
-            $this->assertInstanceOf(\DateTime::class, $entity->getAsDate('orderDate'));
-            $this->assertGreaterThan(new \DateTime('2020-12-31'), $entity->getAsDateTime('lastModifiedDateTime'));
+            $this->assertInstanceOf(\DateTime::class, $entity->get('orderDate', 'date'));
+            $this->assertGreaterThan(new \DateTime('2020-12-31'), $entity->get('lastModifiedDateTime', 'datetime'));
         }
     }
 
@@ -39,7 +39,7 @@ class EntityTest extends TestCase
 
     public function testGetETag(): void
     {
-        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->etag);
+        $this->assertEquals('W/"JzE5OzY3MjczMjkxODU0MzQ2NTQ2MTcxOzAwOyc="', $this->customer->getETag());
     }
 
     public function testGetNotExistingProperty(): void
@@ -51,7 +51,7 @@ class EntityTest extends TestCase
     public function testGetSingleNavProperty(): void
     {
         $salesOrder = $this->salesOrders[0];
-        $customer = $salesOrder->getAsRelation('customer');
+        $customer = $salesOrder->get('customer');
         $this->assertInstanceOf(Entity::class, $customer);
         $this->assertEquals('Jan Ubezpieczenia S.A.', $customer->get('displayName'));
     }
@@ -59,7 +59,7 @@ class EntityTest extends TestCase
     public function testGetAsStream(): void
     {
         $salesOrder = $this->salesOrders[0];
-        $pdfDocument = $salesOrder->getAsRelation('pdfDocument');
+        $pdfDocument = $salesOrder->get('pdfDocument');
         $this->assertInstanceOf(Entity::class, $pdfDocument);
         $this->assertEquals($salesOrder->getPrimaryKey(), $pdfDocument->get('parentId'));
         
@@ -73,7 +73,7 @@ class EntityTest extends TestCase
     public function testGetCollectionNavProperty(): void
     {
         $salesOrder = $this->salesOrders[0];
-        $salesOrderLines = $salesOrder->getAsCollection('salesOrderLines');
+        $salesOrderLines = $salesOrder->get('salesOrderLines', 'collection');
         $this->assertInstanceOf(Entity\Collection::class, $salesOrderLines);
         $this->assertCount(1, $salesOrderLines);
     }
@@ -84,17 +84,17 @@ class EntityTest extends TestCase
 
         $date = new \DateTime('2025-05-16');
         $salesOrder->set('orderDate', $date);
-        $this->assertEquals('2025-05-16', $salesOrder->getAsDate('orderDate')->format('Y-m-d'));
+        $this->assertEquals('2025-05-16', $salesOrder->get('orderDate', 'date')->format('Y-m-d'));
 
         $dateTime = new \DateTime('2025-12-26 01:02');
         $salesOrder->set('lastModifiedDateTime', $dateTime);
-        $this->assertEquals('2025-12-26T01:02:00.000Z', $salesOrder->getAsDateTime('lastModifiedDateTime')->format('Y-m-d\TH:i:s.v\Z'));
+        $this->assertEquals('2025-12-26T01:02:00.000Z', $salesOrder->get('lastModifiedDateTime', 'datetime')->format('Y-m-d\TH:i:s.v\Z'));
     }
 
     public function testToUpdate(): void
     {
         $this->assertEquals([], $this->customer->toUpdate());
-        $this->customer->loadData([
+        $this->customer->set([
             'taxLiable' => 'true',
             'displayName' => 'John Doe',
         ]);
@@ -118,13 +118,14 @@ class EntityTest extends TestCase
         $salesOrder->set('orderDate', '2025-05-16');
 
         // Modify a property in the nested customer entity
-        $customer = $salesOrder->getAsRelation('customer');
+        $customer = $salesOrder->get('customer');
         $this->assertInstanceOf(Entity::class, $customer);
         $customer->set('displayName', 'Modified Customer Name');
 
         // Modify a property in one of the nested salesOrderLines entities
-        $salesOrderLines = $salesOrder->getAsCollection('salesOrderLines', 'collection');
+        $salesOrderLines = $salesOrder->get('salesOrderLines', 'collection');
         $this->assertCount(1, $salesOrderLines);
+        
         $salesOrderLine = $salesOrderLines[0];
         $this->assertInstanceOf(Entity::class, $salesOrderLine);
         $salesOrderLine->set('description', 'Modified Description');
@@ -136,7 +137,7 @@ class EntityTest extends TestCase
         ]);
 
         // Check that toUpdate returns the nested changes
-        $updateData = $salesOrder->toUpdate(true);
+        $updateData = $salesOrder->toUpdate();
         $this->assertArrayHasKey('orderDate', $updateData);
         $this->assertArrayHasKey('customer', $updateData);
         $this->assertArrayHasKey('displayName', $updateData['customer']);
@@ -148,12 +149,6 @@ class EntityTest extends TestCase
         $this->assertEquals('Modified Description', $updateData['salesOrderLines'][0]['description']);
         $this->assertEquals('New Line Description', $updateData['salesOrderLines'][1]['description']);
         $this->assertEquals(10, $updateData['salesOrderLines'][1]['quantity']);
-
-        // Check that toUpdate does not return nested changes with includeExpandedProperties = false
-        $updateData = $salesOrder->toUpdate(false);
-        $this->assertArrayHasKey('orderDate', $updateData);
-        $this->assertArrayNotHasKey('customer', $updateData);
-        $this->assertArrayNotHasKey('salesOrderLines', $updateData);
    }
 
    public function testToUpdateNewInstance(): void
@@ -163,7 +158,7 @@ class EntityTest extends TestCase
            "customerNumber" => "NA0007",
        ]);
 
-       $salesOrderLines = $salesOrder->getAsCollection('salesOrderLines');
+       $salesOrderLines = $salesOrder->get('salesOrderLines', 'collection');
        $salesOrderLines->append(new Entity([
            "sequence" => 10000,
            "itemId" => "b3c285a5-f12b-f011-9a4a-7c1e5275406f",
@@ -176,16 +171,16 @@ class EntityTest extends TestCase
            "quantity" => 20
        ]);
 
-       $updateData = $salesOrder->toUpdate(true);
+       $updateData = $salesOrder->toUpdate();
        $this->assertTrue($salesOrder->isExpandedProperty('salesOrderLines'));
        $this->assertEquals('TEST-001', $updateData['externalDocumentNumber']);
        $this->assertArrayHasKey('salesOrderLines', $updateData);
        $this->assertCount(2, $updateData['salesOrderLines']);
    }
    
-   public function testInstantiatedEntity(): void
+   public function testLoadData(): void
    {
-       $entity = new Entity([
+       $entity = new Entity()->loadData([
            'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
            'name' => 'Test Entity',
            Entity::ODATA_ETAG => 'test-etag',
@@ -200,26 +195,16 @@ class EntityTest extends TestCase
            'customer' => [
                'name' => 'John Doe',
            ]
-       ], [ 'lines', 'customer' ]);
-       $this->expectException(Exception\UsedGetOnExpandedPropertyException::class);
-       $entity->get('lines');
+       ]);
+       
+       $this->assertInstanceOf(Entity::class, $entity->get('customer'));
+       $this->assertInstanceOf(Entity\Collection::class, $entity->get('lines'));
    }
    
    public function testNotExpandedCollectionPropertyThrowsException(): void
    {
        $salesOrder = $this->salesOrders[0];
        $this->expectException(Exception\PropertyIsNotExpandedException::class);
-       $salesOrder->getAsCollection('salesInvoiceLines');
-   }
-   
-   public function testNotExpandedSinglePropertyThrowsException(): void
-   {
-       $salesOrder = $this->salesOrders[0];
-       $salesOrder->addToClassMap([
-           'test' => Entity::class,
-       ]);
-       
-       $this->expectException(Exception\PropertyIsNotExpandedException::class);
-       $salesOrder->get('test');
+       $salesOrder->get('salesInvoiceLines', 'collection');
    }
 }

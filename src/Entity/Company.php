@@ -1,12 +1,15 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
+use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 
 class Company extends Entity
 {
+    protected string $primaryKey = 'id';
+    
     public string $id {
-        get => $this->get('id');
+        get => $this->get('id', 'guid');
     }
 
     public string $name {
@@ -22,18 +25,29 @@ class Company extends Entity
     }
 
     public \DateTime $systemCreatedAt {
-        get => $this->getAsDateTime('systemCreatedAt');
+        get => $this->get('systemCreatedAt', 'datetime');
     }
 
     public string $systemCreatedBy {
-        get => $this->get('systemCreatedBy');
+        get => $this->get('systemCreatedBy', 'guid');
     }
 
     public \DateTime $systemModifiedAt {
-        get => $this->getAsDateTime('systemModifiedAt');
+        get => $this->get('systemModifiedAt', 'datetime');
     }
 
     public string $systemModifiedBy {
-        get => $this->get('systemModifiedBy');
+        get => $this->get('systemModifiedBy', 'guid');
+    }
+
+    /**
+     * @return Repository<Company>
+     */
+    public static function getRepository(Client $client, ?string $entityClass = null): Repository
+    {
+        return new Repository($client,
+            entitySetName: 'companies',
+            entityClass: $entityClass ?? static::class,
+            isCompanyResource: false);
     }
 }

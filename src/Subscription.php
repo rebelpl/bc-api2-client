@@ -7,34 +7,34 @@ class Subscription extends Entity
 {
     protected string $primaryKey = 'subscriptionId';
 
-    public string $subscriptionId {
+    public ?string $subscriptionId {
         get => $this->get('subscriptionId');
     }
 
-    public string $notificationUrl {
+    public ?string $notificationUrl {
         set {
             $this->set('notificationUrl', $value);
         }
         get => $this->get('notificationUrl');
     }
 
-    public string $resource {
+    public ?string $resource {
         set {
             $this->set('resource', $value);
         }
         get => $this->get('resource');
     }
 
-    public int $timestamp {
+    public ?int $timestamp {
         get => $this->get('timestamp');
     }
 
-    public string $userId {
-        get => $this->get('userId');
+    public ?string $userId {
+        get => $this->get('userId', 'guid');
     }
 
-    public Carbon $lastModifiedDateTime {
-        get => $this->getAsDateTime('lastModifiedDateTime');
+    public ?Carbon $lastModifiedDateTime {
+        get => $this->get('lastModifiedDateTime', 'datetime');
     }
 
     public ?string $clientState {
@@ -44,28 +44,36 @@ class Subscription extends Entity
         get => $this->get('clientState');
     }
 
-    public Carbon $expirationDateTime {
-        get => $this->getAsDateTime('expirationDateTime');
+    public ?Carbon $expirationDateTime {
+        get => $this->get('expirationDateTime', 'datetime');
     }
 
-    public Carbon $systemCreatedAt {
-        get => $this->getAsDateTime('systemCreatedAt');
+    public ?Carbon $systemCreatedAt {
+        get => $this->get('systemCreatedAt', 'datetime');
     }
 
-    public string $systemCreatedBy {
-        get => $this->get('systemCreatedBy');
+    public ?string $systemCreatedBy {
+        get => $this->get('systemCreatedBy', 'guid');
     }
 
-    public Carbon $systemModifiedAt {
-        get => $this->getAsDateTime('systemModifiedAt');
+    public ?Carbon $systemModifiedAt {
+        get => $this->get('systemModifiedAt', 'datetime');
     }
 
-    public string $systemModifiedBy {
-        get => $this->get('systemModifiedBy');
+    public ?string $systemModifiedBy {
+        get => $this->get('systemModifiedBy', 'guid');
     }
     
     public function isExpired(): bool
     {
         return $this->expirationDateTime->isFuture();
+    }
+
+    /**
+     * @return Subscription\Repository<Subscription>
+     */
+    public static function getRepository(Client $client, ?string $entityClass = null): Subscription\Repository
+    {
+        return new Subscription\Repository($client, entityClass: $entityClass ?? static::class);
     }
 }

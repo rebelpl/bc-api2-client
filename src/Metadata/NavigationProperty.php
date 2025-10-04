@@ -41,6 +41,7 @@ readonly class NavigationProperty
             return null;
         }
 
+        // strlen('Collection(') === 11
         return substr($this->type, 11, -1);
     }
 }

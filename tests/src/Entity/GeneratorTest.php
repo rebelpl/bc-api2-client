@@ -21,68 +21,67 @@ class GeneratorTest extends TestCase
     
     public function testDateAndDateTimePropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
         $property = $classType->getProperty('orderDate');
         $this->assertEquals(Carbon::class, $property->getType());
         $this->assertTrue($property->isNullable());
 
+        $getHook = $property->getHook('get');
+        $this->assertStringContainsString('get(\'orderDate\', \'date\')', $getHook->getBody());
+
         $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDate(', $setHook->getBody());
+        $this->assertStringContainsString('set(\'orderDate\', $value);', $setHook->getBody());
 
         $property = $classType->getProperty('lastModifiedDateTime');
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('setAsDateTime(', $setHook->getBody());
-        
-        $property = $classType->getProperty('orderDate');
         $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsDate(', $getHook->getBody());
+        $this->assertStringContainsString('get(\'lastModifiedDateTime\', \'datetime\')', $getHook->getBody());
     }
 
     public function testCollectionNavPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
         $property = $classType->getProperty('salesOrderLines');
         $this->assertEquals(Entity\Collection::class, $property->getType());
         $this->assertFalse($property->isNullable());
         
         $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsCollection(', $getHook->getBody());
+        $this->assertStringContainsString('get(\'salesOrderLines\', \'collection\')', $getHook->getBody());
     }
 
     public function testRelationNavPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
         
         $property = $classType->getProperty('customer');
         $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $property->getType());
         $this->assertTrue($property->isNullable());
 
         $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsRelation(', $getHook->getBody());
+        $this->assertStringContainsString('get(\'customer\')', $getHook->getBody());
     }
 
     public function testEnumPropertiesAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
 
         $property = $classType->getProperty('status');
         $this->assertEquals('Rebel\\BCApi2\\Entity\\Enums\\SalesOrderEntityBufferStatus', $property->getType());
         $this->assertTrue($property->isNullable());
 
         $getHook = $property->getHook('get');
-        $this->assertStringContainsString('getAsEnum(', $getHook->getBody());
+        $this->assertStringContainsString('get(\'status\', Enums\\SalesOrderEntityBufferStatus::class)', $getHook->getBody());
     }
 
     public function setHookDoesNotExistForIDProperty(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRecordFor($entitySet);
         
         $property = $classType->getProperty('id');
         $setHook = $property->getHook('set');
@@ -91,11 +90,11 @@ class GeneratorTest extends TestCase
     
     public function testBoundActionsAreCorrect(): void
     {
-        $entityType = $this->metadata->getEntityType('salesOrder');
-        $classType = $this->generator->generateRecordFor($entityType, true);
+        $entitySet = $this->metadata->getEntitySet('salesOrders');
+        $classType = $this->generator->generateRepositoryFor($entitySet);
         
-        $method = $classType->getMethod('doShipAndInvoice');
+        $method = $classType->getMethod('shipAndInvoice');
         $this->assertEquals('void', $method->getReturnType());
-        $this->assertStringContainsString("doAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
+        $this->assertStringContainsString("callBoundAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
     }
 }

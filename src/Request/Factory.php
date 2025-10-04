@@ -23,7 +23,7 @@ class Factory
         foreach ($data as $name => $value) {
             if ($entity->isExpandedProperty($name)) {
                 $targetUrl = new Request\UriBuilder($baseUrl, $entity->getPrimaryKey())->include($name);
-                $property = $entity->getAsRelation($name);
+                $property = $entity->get($name);
                 if ($property instanceof Entity\Collection) {
                     foreach ($value as $i => $changes) {
 

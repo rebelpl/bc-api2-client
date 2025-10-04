@@ -23,7 +23,7 @@ foreach ($salesOrders as $salesOrder) {
 // create a Sales Order
 $salesOrder = new SalesOrder\Record([
     "externalDocumentNumber" => "TEST-001",
-    "customerNumber" => "NA0007",
+    "customerNumber" => "CU-0000001",
 ], [ 'salesOrderLines' ]);
 
 $salesOrder->salesOrderLines[] = new SalesOrderLine\Record([

@@ -193,7 +193,7 @@ class Repository
             throw new \InvalidArgumentException('Record already persisted.');
         }
 
-        $data = $entity->toUpdate(true);
+        $data = $entity->toUpdate();
         $request = Request\Factory::createEntity($this->baseUrl, $entity, $data);
 
         $response = $this->client->call($request);
@@ -211,7 +211,7 @@ class Repository
             throw new \InvalidArgumentException('Record not yet persisted.');
         }
 
-        $data = $entity->toUpdate(true);
+        $data = $entity->toUpdate();
         if (empty($data) && !$forceEmptyUpdate) {
             return;
         }
@@ -275,8 +275,24 @@ class Repository
 
     private function hydrate(array $data, array $expanded): Entity
     {
-        return new $this->entityClass()
-            ->setExpanded($this->normalizeExpandedToArray($expanded))
-            ->loadData($data, $this->baseUrl);
+        /** @var Entity $entity */
+        $entity = new $this->entityClass(expanded: $expanded); 
+        return $entity->loadData($data, $this->baseUrl);
+    }
+
+    /**
+     * @todo $batch call
+     */
+    public function callBoundAction(string $action, Entity $entity, $reloadAfterwards = true): void
+    {
+        $url = $entity->getExpandedContext($action);
+        $response = $this->client->post($url, '');
+        if ($response->getStatusCode() !== Client::HTTP_OK) {
+            throw new Exception\InvalidResponseException($response);
+        }
+        
+        if ($reloadAfterwards) {
+            $this->reload($entity);
+        }
     }
 }

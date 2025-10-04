@@ -4,7 +4,7 @@ namespace Rebel\Test\BCApi2\Entity;
 use PHPUnit\Framework\TestCase;
 use Rebel\BCApi2\Entity\Company;
 
-class CompaniesTest extends TestCase
+class CompanyTest extends TestCase
 {
     /** @var Company[]  */
     private array $companies = [];
@@ -13,7 +13,7 @@ class CompaniesTest extends TestCase
     {
         $data = json_decode(file_get_contents('tests/files/companies.json'), true);
         foreach ($data['value'] as $result) {
-            $this->companies[] = new Company($result);
+            $this->companies[] = new Company()->loadData($result);
         }
     }
 

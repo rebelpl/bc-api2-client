@@ -105,7 +105,7 @@ foreach ($results as $salesOrder) {
 
     # use rebelpl/bc-api2-common or generate your own models for easier access to properties
     echo " - {$salesOrder->get('number')}:\t{$salesOrder->get('totalAmountIncludingTax')} {$salesOrder->get('currencyCode')}\n";
-    foreach ($salesOrder->getAsCollection('salesOrderLines') as $line) {
+    foreach ($salesOrder->get('salesOrderLines', 'collection') as $line) {
         echo " --- {$line->get('sequence')}:\t{$line->get('lineObjectNumber')} x {$line->get('quantity')}";
     }
 }
@@ -114,20 +114,22 @@ foreach ($results as $salesOrder) {
 $salesOrder = new Rebel\BCApi2\Entity([
     'customerNumber' => 'CU-0123',
     'externalDocumentNumber' => 'TEST/123',
-    'salesOrderLines' => [
-        [
+    'salesOrderLines' => new Rebel\BCApi2\Entity\Collection([
+    
+        new Rebel\BCApi2\Entity([
             "sequence" => 10000,
             "lineType" => "Item",
             "lineObjectNumber" => "1900-A",
             "quantity" => 5
         ],
-        [
+        
+        new Rebel\BCApi2\Entity([
             "sequence" => 20000,
             "lineType" => "Item",
             "lineObjectNumber" => "1928-S",
             "quantity" => 20
         ],
-    ],
+    ]),
 ]);
 
 $repository->create($salesOrder);
@@ -148,7 +150,7 @@ its contents, you need to make additional call to the URL listed as @odata.media
 ```php
 $repository = new Rebel\BCApi2\Entity\Repository($client, 'items');
 $item = $repository->findOneBy([ 'number' => '100000' ], [ 'picture' ]);
-$picture = $item->getAsRelation('picture');
+$picture = $item->get('picture');
 
 # download to a file 
 if ($picture->get('contentType')) {
@@ -200,7 +202,7 @@ $repository->save($salesOrder);
 // Create a SalesOrder repository
 $repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
 $salesOrder = $repository->get('abc-123');
-$salesOrder->doAction('shipAndInvoice', $client);
+$repository->callBoundAction('Microsoft.NAV.shipAndInvoice', $salesOrder);
 ```
 
 ## Download metadata for your API

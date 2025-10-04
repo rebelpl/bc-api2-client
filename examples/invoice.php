@@ -8,10 +8,10 @@ chdir(__DIR__ . '/../');
 $client = include(__DIR__ . '/connect/client-credentials.php');
 # $client = include(__DIR__ . '/connect/authorization-code.php');
 
-/** @var Repository<SalesInvoice\Record> $repository */
-$repository = new SalesInvoice\Repository($client)->setExpandedByDefault([ 'pdfDocument' ]);
+$repository = SalesInvoice\Record::getRepository($client)->setExpandedByDefault([ 'pdfDocument' ]);
 echo $repository->getBaseUrl() . "\n";
 
+/** @var SalesInvoice\Record $salesInvoice */
 $salesInvoice = $repository->findOneBy([ 'status' => 'Open' ]);
 echo ' - ' . $salesInvoice->number . "\n";
 echo ' - ' . $salesInvoice->pdfDocument->pdfDocumentContent->getUrl();
