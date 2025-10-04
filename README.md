@@ -76,11 +76,12 @@ foreach ($data['value'] as $item) {
 
 ### Use Request helper
 ```php
+$etag = urldecode($item['@odata.etag']);
 $request = new Rebel\BCApi2\Request('PATCH', 'companies(123456)/items(32d80403)',
     body: json_encode([
         'displayName' => 'Updated Item Name',
         'unitPrice' => 99.95,
-     ]), etag: 'W/"JzE5OzIxMzk2MzA0ODM0ODgyMTU4MDgxOzAwOyc="');
+     ]), etag: $etag);
 $response = $client->call($request);
 ```
 
@@ -175,20 +176,19 @@ The Entity\Repository class provides a custom save() method that handles this li
 by using batchUpdate() to create / update the nested properties.
 
 ```php
-// Create a SalesOrder repository
-$repository = new Rebel\BCApi2\Entity\SalesOrder\Repository($client);
-
 // Get a sales order by ID
-$salesOrder = $repository->get('abc-123', expanded: [ 'salesOrderLines' ]);
+$repository = new Rebel\BCApi2\Entity\Repository($client, 'salesOrders');
+$salesOrder = $repository->get('abc-123', [ 'salesOrderLines' ]);
 
 // Update properties of the sales order
-$salesOrder->externalDocumentNumber = 'TEST';
+$salesOrder->set('externalDocumentNumber', 'TEST');
+$salesLines = $salesOrder->get('salesOrderLines'); 
 
 // Update existing line
-$salesOrder->salesOrderLines[0]->quantity = 10;
+$salesLines[0]->set('quantity', 10);
 
 // Add new line
-$salesOrder->salesOrderLines[] = new Rebel\BCApi2\Entity\SalesOrderLine\Record([
+$salesLines[] = new Rebel\BCApi2\Entity([
     'itemId' => '12345',
     'quantity' => 5
 ]);
@@ -236,6 +236,8 @@ $generator->saveAllFilesTo('app/Models', overwrite: true);
 ```
 
 # Known Limitations
-Currently read-only properties on otherwise editable entities (like customerName on salesOrder)
-are not hinted as read-only in metadata, so the Generator still generates a property setter hook,
-even if it's useless.
+The client currently does not support complex primary keys (TBD).
+
+Read-only properties on otherwise editable entities (like customerName on salesOrder)
+are not hinted as read-only in metadata, so the Generator still generates a property
+setter hook, even if it's useless.

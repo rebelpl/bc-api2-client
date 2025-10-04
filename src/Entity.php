@@ -45,11 +45,6 @@ class Entity
         return in_array($property, $this->expanded) || array_key_exists($property, $this->expanded);
     }
     
-    protected function getClassnameFor(string $property): string
-    {
-        return $this->classMap[ $property ] ?? self::class;
-    }
-
     public function getETag(): ?string
     {
         return !empty($this->data[ Entity::ODATA_ETAG ])
