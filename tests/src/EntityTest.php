@@ -92,18 +92,40 @@ class EntityTest extends TestCase
         $this->assertEquals('2025-12-26T01:02:00.000Z', $salesOrder->get('lastModifiedDateTime', 'datetime')->format('Y-m-d\TH:i:s.v\Z'));
     }
 
-    public function testToUpdate(): void
+    public function testToUpdateNewEntity(): void
+    {
+        $entity = new Entity();
+        $this->assertEquals([], $entity->toUpdate());
+        $entity->set([
+            'blocked' => false,
+            'name' => 'John Doe',
+            'discountPercent' => 0,
+            'creditLimit' => 25000.99,
+        ]);
+
+        $this->assertEquals([
+            'blocked' => false,
+            'name' => 'John Doe',
+            'discountPercent' => 0,
+            'creditLimit' => 25000.99,
+        ], $entity->toUpdate());
+    }
+
+    public function testToUpdateLoadedEntity(): void
     {
         $this->assertEquals([], $this->customer->toUpdate());
         $this->customer->set([
-            'taxLiable' => 'true',
-            'displayName' => 'John Doe',
+            'phoneNumber' => '1234567890',
+            'taxLiable' => true,
+            'email' => null,
+            'creditLimit' => 0,
         ]);
 
-        $this->assertEquals('John Doe', $this->customer->get('displayName'));
         $this->assertEquals([
+            'phoneNumber' => '1234567890',
             'taxLiable' => true,
-            'displayName' => 'John Doe',
+            'email' => null,
+            'creditLimit' => 0,
         ], $this->customer->toUpdate());
     }
 
@@ -152,7 +174,7 @@ class EntityTest extends TestCase
         $this->assertEquals(10, $updateData['salesOrderLines'][1]['quantity']);
    }
 
-   public function testToUpdateNewInstance(): void
+   public function testToUpdateNewExpandedEntity(): void
    {
        $salesOrder = new Entity([
            "externalDocumentNumber" => "TEST-001",
