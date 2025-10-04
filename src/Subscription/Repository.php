@@ -14,10 +14,10 @@ class Repository extends Entity\Repository
     
     public function register(Subscription $subscription, string $resource): void
     {
-        $subscription->setResource(sprintf('api/%s/%s/%s',
+        $subscription->resource = sprintf('api/%s/%s/%s',
             $this->client->getApiRoute(),
             $this->client->getCompanyPath(),
-            trim($resource, '/')));
+            trim($resource, '/'));
         $this->create($subscription);
     }
     

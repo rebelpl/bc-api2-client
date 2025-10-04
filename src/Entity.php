@@ -9,24 +9,26 @@ use Rebel\BCApi2\Request\Expression;
 
 class Entity
 {
-    const string ODATA_ETAG = '@odata.etag';
-    const string ODATA_CONTEXT = '@odata.context';
-    const string ODATA_MEDIA_READLINK = '@odata.mediaReadLink';
-    const string ODATA_MEDIA_EDITLINK = '@odata.mediaEditLink';
-    const string NULL_GUID = '00000000-0000-0000-0000-000000000000';
+    const ODATA_ETAG = '@odata.etag';
+    const ODATA_CONTEXT = '@odata.context';
+    const ODATA_MEDIA_READLINK = '@odata.mediaReadLink';
+    const ODATA_MEDIA_EDITLINK = '@odata.mediaEditLink';
+    const NULL_GUID = '00000000-0000-0000-0000-000000000000';
 
-    protected string $primaryKey;
+    protected $primaryKey;
     
-    protected array $data = [];
-    protected array $original = [];
-    protected array $casts = [];
+    protected $data = [];
+    protected $original = [];
+    protected $casts = [];
 
-    public ?string $context;
+    public $context;
+    protected $expanded = [];
 
     public function __construct(
         array $data = [],
-        protected array $expanded = [])
+        array $expanded = [])
     {
+        $this->expanded = $expanded;
         $this->set($data);
     }
     
@@ -45,11 +47,6 @@ class Entity
         return in_array($property, $this->expanded) || array_key_exists($property, $this->expanded);
     }
     
-    protected function getClassnameFor(string $property): string
-    {
-        return $this->classMap[ $property ] ?? self::class;
-    }
-
     public function getETag(): ?string
     {
         return !empty($this->data[ Entity::ODATA_ETAG ])
@@ -67,19 +64,19 @@ class Entity
         $this->data[ $this->primaryKey ] = $value;
     }
 
-    public function getPrimaryKey(): mixed
+    public function getPrimaryKey()
     {
         return $this->data[ $this->primaryKey ] ?? null;
     }
 
-    public function loadData(array $data, ?string $context = null): static
+    public function loadData(array $data, ?string $context = null): self
     {
         if (!empty($data[ Entity::ODATA_ETAG ])) {
             $this->context = $context;
         }
         
         foreach ($data as $property => $value) {
-            if (!isset($this->primaryKey) && !str_starts_with($property, '@odata')) {
+            if (!isset($this->primaryKey) && (strpos($property, '@odata') !== 0)) {
                 $this->primaryKey = $property;
             }
             
@@ -96,17 +93,29 @@ class Entity
         
         return $this;
     }
+
+    private function arrayIsList(array $array): bool
+    {
+        $i = 0;
+        foreach ($array as $key => $value) {
+            if ($key !== $i++) {
+                return false;
+            }
+        }
+
+        return true;
+    }
     
-    private function load(string $property, mixed $value): void
+    private function load(string $property, $value): void
     {
         if (!is_array($value)) {
-            if (str_ends_with($property, self::ODATA_MEDIA_READLINK)) {
+            if (substr($property, -strlen(self::ODATA_MEDIA_READLINK)) === self::ODATA_MEDIA_READLINK) {
                 $property = substr($property, 0, -strlen(self::ODATA_MEDIA_READLINK));
                 $this->data[ $property ] = new DataStream($value);
                 return;
             }
-    
-            if (str_ends_with($property, self::ODATA_MEDIA_EDITLINK)) {
+
+            if (substr($property, -strlen(self::ODATA_MEDIA_EDITLINK)) === self::ODATA_MEDIA_EDITLINK) {
                 $property = substr($property, 0, -strlen(self::ODATA_MEDIA_EDITLINK));
                 $this->data[ $property ] = new DataStream($value);
                 return;
@@ -121,9 +130,9 @@ class Entity
         }
         
         $context = $this->getExpandedContext($property, false);
-        if (!array_is_list($value)) {
+        if (!$this->arrayIsList($value)) {
             $className = $this->casts[ $property ] ?? Entity::class;
-            $this->data[ $property ] = new $className()->loadData($value, $context);
+            $this->data[ $property ] = (new $className())->loadData($value, $context);
             return;
         }
 
@@ -134,35 +143,49 @@ class Entity
         
         $className = $cast[0];
         $this->data[ $property ] = new Collection(array_map(function ($item) use ($className, $context) {
-            return new $className()->loadData($item, $context);
+            return (new $className())->loadData($item, $context);
         }, $value));
+    }
+
+    public function __get(string $property)
+    {
+        return $this->get($property);
+    }
+
+    public function __set(string $property, $value)
+    {
+        $this->set($property, $value);
+    }
+
+    public function __isset(string $property)
+    {
+        $this->isset($property);
     }
 
     public function isset(string $property): bool
     {
         return isset($this->data[ $property ]);
     }
-
-    public function get(string $property, null|string|array $cast = null): mixed
+    
+    public function get(string $property, $cast = null)
     {
         $cast = $cast ?? $this->casts[ $property ] ?? null;
         if (is_array($cast) || $cast === 'collection') {
             return $this->getAsCollection($property);
         }
 
-        if (is_a($cast, \UnitEnum::class, true)) {
-            return $this->getAsEnum($property, $cast);
-        }
-        
         if (!array_key_exists($property, $this->data)) {
             throw new Exception\PropertyDoesNotExistException($property);
         }
         
-        return match ($cast) {
-            'date', 'datetime' => $this->getAsDateTime($property),
-            'guid' => $this->getAsGuid($property),
-            default => $this->data[ $property ],
-        };
+        switch ($cast) {
+            case 'date':
+            case 'datetime':
+                return $this->getAsDateTime($property);
+            
+            case 'guid': return $this->getAsGuid($property);
+            default: return $this->data[ $property ];
+        }
     }
 
     private function getAsCollection(string $property): Collection
@@ -179,20 +202,10 @@ class Entity
         return $this->data[ $property ];
     }
     
-    private function getAsEnum(string $property, string $enumClass): mixed
-    {
-        $value = $this->data[ $property ] ?? null;
-        if (is_null($value)) {
-            return null;
-        }
-
-        return call_user_func([ $enumClass, 'tryFrom' ], $value);
-    }
-
     private function getAsDateTime(string $property): ?Carbon
     {
         $value = $this->data[ $property ] ?? null;
-        if (empty($value) || str_starts_with($value, '0001')) {
+        if (empty($value) || (strpos($value, '0001') === 0)) {
             return null;
         }
 
@@ -209,7 +222,7 @@ class Entity
         return $value;
     }
 
-    public function set(mixed $property, mixed $value = null, null|string|array $cast = null): static
+    public function set($property, $value = null, $cast = null): self
     {
         if (is_array($property)) {
             foreach ($property as $name => $value) {
@@ -225,16 +238,6 @@ class Entity
         }
         
         $cast = $cast ?? $this->casts[ $property ] ?? null;
-        if ($value instanceof \BackedEnum) {
-            $this->data[ $property ] = $value->value;
-            return $this;
-        }
-
-        if ($value instanceof \UnitEnum) {
-            $this->data[ $property ] = $value->name;
-            return $this;
-        }
-
         if ($value instanceof \DateTime) {
             $this->setFromDateTime($property, $value, $cast === 'date');
             return $this;
@@ -288,7 +291,10 @@ class Entity
     
     public function getExpandedContext(string $name, bool $throwExceptionIfMissing = true): ?string
     {
-        return $this->getContext($throwExceptionIfMissing)?->include($name);
+        $context = $this->getContext($throwExceptionIfMissing);
+        return $context
+            ? $context->include($name)
+            : null;
     }
     
     public function fetchAsStream(string $name, Client $client): StreamInterface
@@ -311,7 +317,7 @@ class Entity
         return '($filter=' . Expression::and($criteria) . ')';
     }
     
-    public function expandWith(string $property, Client $client, array $criteria = []): static
+    public function expandWith(string $property, Client $client, array $criteria = []): self
     {
         $url = $this->getExpandedContext($property . $this->filterToString($criteria));
         $response = $client->get($url);

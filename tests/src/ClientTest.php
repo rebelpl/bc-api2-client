@@ -164,14 +164,14 @@ class ClientTest extends TestCase
         $companies = $this->client->getCompanies();
         foreach ($companies as $company) {
             $this->assertInstanceOf(Company::class, $company);
-            $this->assertContains($company->getId(), [
+            $this->assertContains($company->id, [
                 'e802e7d1-5408-f011-9afa-6045bdabb318',
                 '3ab5c248-e72b-f011-9a4a-7c1e5275406f',
             ]);
 
-            $this->assertIsString($company->getName());
-            $this->assertGreaterThan(4, strlen($company->getName()));
-            $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->getSystemCreatedAt());
+            $this->assertIsString($company->name);
+            $this->assertGreaterThan(4, strlen($company->name));
+            $this->assertGreaterThan(new \DateTime('01.01.2025'), $company->systemCreatedAt);
         }
 
         $lastRequest = $this->getLastRequest();

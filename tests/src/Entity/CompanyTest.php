@@ -13,7 +13,7 @@ class CompanyTest extends TestCase
     {
         $data = json_decode(file_get_contents('tests/files/companies.json'), true);
         foreach ($data['value'] as $result) {
-            $this->companies[] = new Company()->loadData($result);
+            $this->companies[] = (new Company())->loadData($result);
         }
     }
 
@@ -21,13 +21,13 @@ class CompanyTest extends TestCase
     {
         $this->assertCount(2, $this->companies);
         foreach ($this->companies as $company) {
-            $this->assertContains($company->getId(), [
+            $this->assertContains($company->id, [
                 'e802e7d1-5408-f011-9afa-6045bdabb318',
                 '3ab5c248-e72b-f011-9a4a-7c1e5275406f',
             ]);
 
-            $this->assertNotEmpty($company->getName());
-            $this->assertGreaterThan(new \DateTime('2020-01-01'), $company->getSystemCreatedAt());
+            $this->assertNotEmpty($company->name);
+            $this->assertGreaterThan(new \DateTime('2020-01-01'), $company->systemCreatedAt);
         }
     }
 }

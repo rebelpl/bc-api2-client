@@ -1,53 +1,39 @@
 <?php
 namespace Rebel\BCApi2\Entity;
 
+use Carbon\Carbon;
 use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 
+/**
+ * @property-read ?string id
+ * @property-read ?string systemVersion
+ * @property-read ?int timestamp
+ * @property-read ?string name
+ * @property-read ?string displayName
+ * @property-read ?string businessProfileId
+ * @property-read ?Carbon systemCreatedAt
+ * @property-read ?string systemCreatedBy
+ * @property-read ?Carbon systemModifiedAt
+ * @property-read ?string systemModifiedBy
+*/
 class Company extends Entity
 {
-    protected string $primaryKey = 'id';
+    protected $primaryKey = 'id';
     
-    public string $id {
-        get => $this->get('id', 'guid');
-    }
-
-    public string $name {
-        get => $this->get('name');
-    }
-
-    public string $displayName {
-        get => $this->get('displayName');
-    }
-
-    public string $systemVersion {
-        get => $this->get('systemVersion');
-    }
-
-    public \DateTime $systemCreatedAt {
-        get => $this->get('systemCreatedAt', 'datetime');
-    }
-
-    public string $systemCreatedBy {
-        get => $this->get('systemCreatedBy', 'guid');
-    }
-
-    public \DateTime $systemModifiedAt {
-        get => $this->get('systemModifiedAt', 'datetime');
-    }
-
-    public string $systemModifiedBy {
-        get => $this->get('systemModifiedBy', 'guid');
-    }
+    protected $casts = [
+        'id' => 'guid',
+        'systemCreatedAt' => 'datetime',
+        'systemCreatedBy' => 'guid',
+        'systemModifiedAt' => 'datetime',
+        'systemModifiedBy' => 'guid',
+    ];
 
     /**
      * @return Repository<Company>
      */
     public static function getRepository(Client $client, ?string $entityClass = null): Repository
     {
-        return new Repository($client,
-            entitySetName: 'companies',
-            entityClass: $entityClass ?? static::class,
-            isCompanyResource: false);
+        return new Repository($client, 'companies', $entityClass ?? static::class, false);
     }
 }

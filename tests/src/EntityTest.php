@@ -16,11 +16,11 @@ class EntityTest extends TestCase
     public function setUp(): void
     {
         $data = json_decode(file_get_contents('tests/files/customer.json'), true);
-        $this->customer = new Entity()->loadData($data);
+        $this->customer = (new Entity())->loadData($data);
 
         $contents = json_decode(file_get_contents('tests/files/salesOrders.json'), true);
         foreach ($contents['value'] as $data) {
-            $this->salesOrders[] = new Entity()->loadData($data);
+            $this->salesOrders[] = (new Entity())->loadData($data);
         }
     }
 
@@ -181,7 +181,7 @@ class EntityTest extends TestCase
    
    public function testLoadData(): void
    {
-       $entity = new Entity()->loadData([
+       $entity = (new Entity())->loadData([
            'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
            'name' => 'Test Entity',
            Entity::ODATA_ETAG => 'test-etag',

@@ -12,18 +12,24 @@ use Rebel\BCApi2\Request\Batch;
  */
 class Repository
 {
-    private readonly string $baseUrl;
-    private array $expandedByDefault = [];
+    /** @var Client */
+    protected $client;
+
+    protected $baseUrl;
+    protected $expandedByDefault = [];
+    protected $entityClass = Entity::class;
 
     /**
      * @param class-string<T> $entityClass
      */
     public function __construct(
-        protected readonly Client $client,
+        Client $client,
         string $entitySetName,
-        protected readonly string $entityClass = Entity::class,
-        bool             $isCompanyResource = true)
+        string $entityClass = Entity::class,
+        bool   $isCompanyResource = true)
     {
+        $this->client = $client;
+        $this->entityClass = $entityClass;
         if (!class_exists($this->entityClass)) {
             throw new Exception("Class '$this->entityClass' does not exist.");
         }
@@ -43,7 +49,7 @@ class Repository
         return $this->baseUrl;
     }
     
-    public function setExpandedByDefault(array $expanded): static
+    public function setExpandedByDefault(array $expanded): self
     {
         $this->expandedByDefault = $expanded;
         return $this;
@@ -54,7 +60,7 @@ class Repository
      */
     public function findOneBy(array $criteria, array $expanded = []): ?Entity
     {
-        $result = $this->findBy($criteria, size: 1, expanded: $expanded);
+        $result = $this->findBy($criteria, null, 1, null, $expanded);
         return !empty($result) ? $result[0] : null;
     }
 
@@ -63,7 +69,7 @@ class Repository
      */
     public function findAll($orderBy = null, array $expanded = []): array
     {
-        return $this->findBy([], $orderBy, expanded: $expanded);
+        return $this->findBy([], $orderBy, null, null, $expanded);
     }
 
     /**
@@ -73,7 +79,7 @@ class Repository
     {
         $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl)
+            (new Request\UriBuilder($this->baseUrl))
                 ->where($criteria)
                 ->orderBy($orderBy)
                 ->top($size)
@@ -101,7 +107,7 @@ class Repository
     {
         $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl, $primaryKey)
+            (new Request\UriBuilder($this->baseUrl, $primaryKey))
                 ->expand($expanded));
 
         $response = $this->client->call($request);
@@ -117,7 +123,7 @@ class Repository
         return $this->hydrate($data, $expanded);
     }
     
-    private function normalizeExpandedToArray(mixed $expanded): array
+    private function normalizeExpandedToArray($expanded): array
     {
         if (!is_iterable($expanded)) {
             return [ (string)$expanded ];
@@ -142,7 +148,7 @@ class Repository
     public function reload(Entity $entity): void
     {
         $request = new Request('GET',
-            new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+            (new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey()))
                 ->expand($entity->getExpandedProperties()));
 
         $response = $this->client->call($request);
@@ -276,7 +282,7 @@ class Repository
     private function hydrate(array $data, array $expanded): Entity
     {
         /** @var Entity $entity */
-        $entity = new $this->entityClass(expanded: $expanded); 
+        $entity = new $this->entityClass([], $expanded); 
         return $entity->loadData($data, $this->baseUrl);
     }
 

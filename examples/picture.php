@@ -13,11 +13,11 @@ $repository = new Item\Repository($client);
 echo $repository->getBaseUrl() . "\n";
 
 $item = $repository->findOneBy([ 'number' => '100000' ]);
-echo ' - ' . $item->getNumber() . "\n";
+echo ' - ' . $item->number . "\n";
 
 $item->expandWith('picture', $client);
-echo ' - ' . $item->getPicture()->getContentType() . "\n";
+echo ' - ' . $item->picture->contentType . "\n";
 
 $picture = file_get_contents('tests/files/picture.png');
-$item->getPicture()->getPictureContent()->uploadWith($client, $picture, $item->getPicture()->getETag());
-echo ' - ' . $item->getPicture()->getContentType() . "\n";
+$item->picture->pictureContent->uploadWith($client, $picture, $item->picture->getETag());
+echo ' - ' . $item->picture->contentType . "\n";

@@ -10,10 +10,10 @@ $client = include(__DIR__ . '/connect/client-credentials.php');
 $repository = new Subscription\Repository($client);
 
 $subscription = new Subscription();
-$subscription->setNotificationUrl('https://admin.rebel.pl/test/webhook');
+$subscription->notificationUrl = 'https://admin.rebel.pl/test/webhook';
 
 $repository->register($subscription, '/contacts');
-var_dump($subscription->getSubscriptionId());
+var_dump($subscription->subscriptionId);
 
 $repository->renew($subscription);
-echo $subscription->getExpirationDateTime() . "\n";
+echo $subscription->expirationDateTime . "\n";

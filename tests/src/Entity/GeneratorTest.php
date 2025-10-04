@@ -9,8 +9,11 @@ use Rebel\BCApi2\Metadata;
 
 class GeneratorTest extends TestCase
 {
-    private Generator $generator;
-    private Metadata $metadata;
+    /** @var Generator */
+    private $generator;
+    
+    /** @var Metadata */
+    private $metadata;
     
     protected function setUp(): void
     {
@@ -23,20 +26,10 @@ class GeneratorTest extends TestCase
     {
         $entitySet = $this->metadata->getEntitySet('salesOrders');
         $classType = $this->generator->generateRecordFor($entitySet);
-
-        $property = $classType->getProperty('orderDate');
-        $this->assertEquals(Carbon::class, $property->getType());
-        $this->assertTrue($property->isNullable());
-
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(\'orderDate\', \'date\')', $getHook->getBody());
-
-        $setHook = $property->getHook('set');
-        $this->assertStringContainsString('set(\'orderDate\', $value);', $setHook->getBody());
-
-        $property = $classType->getProperty('lastModifiedDateTime');
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(\'lastModifiedDateTime\', \'datetime\')', $getHook->getBody());
+        
+        $comment = $classType->getComment();
+        $this->assertStringContainsString('@property ?Carbon orderDate', $comment);
+        $this->assertStringContainsString('@property-read ?Carbon lastModifiedDateTime', $comment);
     }
 
     public function testCollectionNavPropertiesAreCorrect(): void
@@ -44,25 +37,17 @@ class GeneratorTest extends TestCase
         $entitySet = $this->metadata->getEntitySet('salesOrders');
         $classType = $this->generator->generateRecordFor($entitySet);
 
-        $property = $classType->getProperty('salesOrderLines');
-        $this->assertEquals(Entity\Collection::class, $property->getType());
-        $this->assertFalse($property->isNullable());
-        
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(\'salesOrderLines\', \'collection\')', $getHook->getBody());
+        $comment = $classType->getComment();
+        $this->assertStringContainsString('@property Entity\Collection<SalesOrderLine\Record> salesOrderLines', $comment);
     }
 
     public function testRelationNavPropertiesAreCorrect(): void
     {
         $entitySet = $this->metadata->getEntitySet('salesOrders');
         $classType = $this->generator->generateRecordFor($entitySet);
-        
-        $property = $classType->getProperty('customer');
-        $this->assertEquals('Rebel\\BCApi2\\Entity\\Customer\\Record', $property->getType());
-        $this->assertTrue($property->isNullable());
 
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(\'customer\')', $getHook->getBody());
+        $comment = $classType->getComment();
+        $this->assertStringContainsString('@property-read ?Customer\Record customer', $comment);
     }
 
     public function testEnumPropertiesAreCorrect(): void
@@ -70,22 +55,18 @@ class GeneratorTest extends TestCase
         $entitySet = $this->metadata->getEntitySet('salesOrders');
         $classType = $this->generator->generateRecordFor($entitySet);
 
-        $property = $classType->getProperty('status');
-        $this->assertEquals('Rebel\\BCApi2\\Entity\\Enums\\SalesOrderEntityBufferStatus', $property->getType());
-        $this->assertTrue($property->isNullable());
-
-        $getHook = $property->getHook('get');
-        $this->assertStringContainsString('get(\'status\', Enums\\SalesOrderEntityBufferStatus::class)', $getHook->getBody());
+        $comment = $classType->getComment();
+        $this->assertStringContainsString('@property ?string status', $comment);
     }
 
-    public function setHookDoesNotExistForIDProperty(): void
+    public function setReadOnlyProperties(): void
     {
         $entitySet = $this->metadata->getEntitySet('salesOrders');
         $classType = $this->generator->generateRecordFor($entitySet);
-        
-        $property = $classType->getProperty('id');
-        $setHook = $property->getHook('set');
-        $this->assertNull($setHook);
+
+        $comment = $classType->getComment();
+        $this->assertStringContainsString('@property-read ?string id', $comment);
+        $this->assertStringContainsString('@property-read ?Carbon lastModifiedDateTime', $comment);
     }
     
     public function testBoundActionsAreCorrect(): void
