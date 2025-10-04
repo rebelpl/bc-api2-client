@@ -234,6 +234,8 @@ $generator->saveAllFilesTo('app/Models', true);
 ```
 
 # Known Limitations
-Currently read-only properties on otherwise editable entities (like customerName on salesOrder)
-are not hinted as read-only in metadata, so the Generator still generates a property setter hook,
-even if it's useless.
+The client currently does not support complex primary keys (TBD).
+
+Read-only properties on otherwise editable entities (like customerName on salesOrder)
+are not hinted as read-only in metadata, so the Generator still generates a property
+setter hook, even if it's useless.
