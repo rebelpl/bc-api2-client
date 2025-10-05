@@ -39,15 +39,4 @@ class Company extends Entity
     public string $systemModifiedBy {
         get => $this->get('systemModifiedBy', 'guid');
     }
-
-    /**
-     * @return Repository<Company>
-     */
-    public static function getRepository(Client $client, ?string $entityClass = null): Repository
-    {
-        return new Repository($client,
-            entitySetName: 'companies',
-            entityClass: $entityClass ?? static::class,
-            isCompanyResource: false);
-    }
 }
