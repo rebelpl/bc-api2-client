@@ -38,7 +38,7 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
 
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property Entity\Collection<SalesOrderLine\Record> salesOrderLines', $comment);
+        $this->assertStringContainsString('@property SalesOrderLine\Record[]|Entity\Collection<SalesOrderLine\Record> salesOrderLines', $comment);
     }
 
     public function testRelationNavPropertiesAreCorrect(): void

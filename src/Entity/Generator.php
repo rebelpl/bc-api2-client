@@ -246,8 +246,8 @@ class Generator
         if ($property->isCollection()) {
             $type = ucfirst(substr($property->getCollectionType(), strlen($this->metadata->getNamespace()) + 1));
 
-            return sprintf('@property Entity\Collection<%s\Record> %s',
-                $type, $name);
+            return sprintf('@property %s\Record[]|Entity\Collection<%s\Record> %s',
+                $type, $type, $name);
         }
 
         $type = ucfirst(substr($property->getType(), strlen($this->metadata->getNamespace()) + 1));
