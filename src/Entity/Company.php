@@ -28,12 +28,4 @@ class Company extends Entity
         'systemModifiedAt' => 'datetime',
         'systemModifiedBy' => 'guid',
     ];
-
-    /**
-     * @return Repository<Company>
-     */
-    public static function getRepository(Client $client, ?string $entityClass = null): Repository
-    {
-        return new Repository($client, 'companies', $entityClass ?? static::class, false);
-    }
 }

@@ -33,14 +33,6 @@ class Subscription extends Entity
 
     public function isExpired(): bool
     {
-        return $this->expirationDateTime->isFuture();
-    }
-    
-    /**
-     * @return Subscription\Repository<Subscription>
-     */
-    public static function getRepository(Client $client, ?string $entityClass = null): Subscription\Repository
-    {
-        return new Subscription\Repository($client, $entityClass ?? static::class);
+        return !$this->expirationDateTime->isFuture();
     }
 }

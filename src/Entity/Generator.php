@@ -220,29 +220,9 @@ class Generator
         }
         
         $class->addMember($this->generateRecordCasts($entityType));
-        $class->addMember($this->generateRecordGetRepositoryMethod($entityType));
         return $class;
     }
     
-    protected function generateRecordGetRepositoryMethod(Metadata\EntityType $entityType): PhpGenerator\Method
-    {
-        return (new PhpGenerator\Method('getRepository'))
-            ->setReturnType($this->namespacePrefix . ucfirst($entityType->getName()) . '\\Repository')
-            ->setPublic()
-            ->setStatic()
-            ->setParameters([
-                (new PhpGenerator\Parameter('client'))
-                    ->setType(Client::class),
-                (new PhpGenerator\Parameter('entityClass'))
-                    ->setType('string')
-                    ->setNullable()
-                    ->setDefaultValue(null),
-            ])
-            ->setBody(
-                'return new Repository($client, $entityClass ?? static::class);')
-            ->addComment('@return Repository<Record>');
-    }
-
     protected function generateRecordPropertiesAsComments(Metadata\EntityType $entityType, bool $isUpdateable): array
     {
         $comments = [];
