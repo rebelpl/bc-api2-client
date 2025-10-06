@@ -12,6 +12,7 @@ use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 use Rebel\BCApi2\Entity\Repository;
 use Rebel\BCApi2\Exception;
+use Rebel\BCApi2\Request\Expression;
 
 class RepositoryTest extends TestCase
 {
@@ -47,25 +48,25 @@ class RepositoryTest extends TestCase
         return $transaction['request'];
     }
 
-    public function testEntityClassDoesNotExist()
+    public function testEntityClassDoesNotExist(): void
     {
         $this->expectException(Exception::class);
         new Repository($this->client, 'salesInvoice', 'NotExistingClassName');
     }
 
-    public function testEntityClassDefault()
+    public function testEntityClassDefault(): void
     {
         $repository = new Repository($this->client, 'salesInvoices');
         $this->assertEquals(Entity::class, $repository->getEntityClass());
     }
 
-    public function testGetBaseUrl()
+    public function testGetBaseUrl(): void
     {
         $repository = new Repository($this->client, 'salesInvoices');
         $this->assertEquals('companies(test-company-id)/salesInvoices', $repository->getBaseUrl());
     }
 
-    public function testGetSalesOrders()
+    public function testGetSalesOrders(): void
     {
         $this->mockResponse->append(new Response(200, [],
             file_get_contents('tests/files/salesOrders.json')));
@@ -136,7 +137,7 @@ class RepositoryTest extends TestCase
         $this->assertEquals('196238', $addresses[0]->get('code'));
     }
     
-    public function testFindOneBy()
+    public function testFindOneBy(): void
     {
         $this->mockResponse->append(new Response(200, [],
             file_get_contents('tests/files/customers.json')));
@@ -150,15 +151,61 @@ class RepositoryTest extends TestCase
             urldecode($lastRequest->getUri()->getQuery()));
     }
     
-    public function testFindByDate()
+    public function testFindByDate(): void
     {
         $this->mockResponse->append(new Response(200, [],
-            file_get_contents('tests/files/salesOrders.json')));
-        
+            file_get_contents('tests/files/empty.json')));
+
         $repository = new Repository($this->client, 'salesOrders');
         $repository->findBy([ 'documentDate' => new \DateTime('2020-12-31') ]);
         $lastRequest = $this->getLastRequest();
         $this->assertEquals('$filter=documentDate eq 2020-12-31T00:00:00.000Z',
+            urldecode($lastRequest->getUri()->getQuery()));
+    }
+    
+    public function testDefaultFilters(): void
+    {
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/empty.json')));
+
+        $repository = new Repository($this->client, 'customers')
+            ->setDefaultFilters([
+                Expression::greaterThan('creditLimit', 1000),
+                'discountGroup' => 'GOLD',
+            ]);
+        
+        $repository->findBy([
+            'blocked' => false,
+            'discountGroup' => 'SILVER',
+        ]);
+        
+        $lastRequest = $this->getLastRequest();
+        $this->assertEquals('$filter=creditLimit gt 1000 and discountGroup eq \'SILVER\' and blocked eq false',
+            urldecode($lastRequest->getUri()->getQuery()));
+    }
+    
+    public function testDefaultExpanded(): void
+    {
+        $this->mockResponse->append(new Response(200, [],
+            file_get_contents('tests/files/empty.json')));
+
+        $repository = new Repository($this->client, 'customers')
+            ->setExpandedByDefault([
+                'salesInvoices',
+                'salesAmount' => [
+                    'currencyCode' => 'USD',
+                ],
+            ]);
+
+        $repository->findOneBy([
+            'no' => 'CU-TEST',
+        ]);
+
+        $lastRequest = $this->getLastRequest();
+        $this->assertEquals(
+            '$filter=no eq \'CU-TEST\'' .
+            '&$top=1' .
+            '&$expand=salesInvoices,salesAmount($filter=currencyCode eq \'USD\')',
             urldecode($lastRequest->getUri()->getQuery()));
     }
 }

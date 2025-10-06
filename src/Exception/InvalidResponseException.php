@@ -9,8 +9,8 @@ class InvalidResponseException extends Exception
     public function __construct(Psr7\Response $response)
     {
         $data = json_decode($response->getBody(), true);
-        isset($data['error'])
-            ? parent::__construct($data['error']['message'], $response->getStatusCode())
-            : parent::__construct($response->getBody(), $response->getStatusCode());
+        parent::__construct(
+            isset($data['error']) ? $data['error']['message'] : 'Unknown error.', 
+            $response->getStatusCode());
     }
 }
