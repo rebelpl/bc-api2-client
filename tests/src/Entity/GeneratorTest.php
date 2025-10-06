@@ -1,9 +1,7 @@
 <?php
 namespace Rebel\Test\BCApi2\Entity;
 
-use Carbon\Carbon;
 use PHPUnit\Framework\TestCase;
-use Rebel\BCApi2\Entity;
 use Rebel\BCApi2\Entity\Generator;
 use Rebel\BCApi2\Metadata;
 
@@ -28,8 +26,8 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
         
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property ?Carbon orderDate', $comment);
-        $this->assertStringContainsString('@property-read ?Carbon lastModifiedDateTime', $comment);
+        $this->assertStringContainsString('@property ?Carbon $orderDate', $comment);
+        $this->assertStringContainsString('@property-read ?Carbon $lastModifiedDateTime', $comment);
     }
 
     public function testCollectionNavPropertiesAreCorrect(): void
@@ -38,7 +36,7 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
 
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property Entity\Collection|SalesOrderLine\Record[] salesOrderLines', $comment);
+        $this->assertStringContainsString('@property Entity\Collection|SalesOrderLine\Record[] $salesOrderLines', $comment);
     }
 
     public function testRelationNavPropertiesAreCorrect(): void
@@ -47,7 +45,7 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
 
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property-read ?Customer\Record customer', $comment);
+        $this->assertStringContainsString('@property-read ?Customer\Record $customer', $comment);
     }
 
     public function testEnumPropertiesAreCorrect(): void
@@ -56,7 +54,7 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
 
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property ?string status', $comment);
+        $this->assertStringContainsString('@property ?string $status', $comment);
     }
 
     public function setReadOnlyProperties(): void
@@ -65,8 +63,8 @@ class GeneratorTest extends TestCase
         $classType = $this->generator->generateRecordFor($entitySet);
 
         $comment = $classType->getComment();
-        $this->assertStringContainsString('@property-read ?string id', $comment);
-        $this->assertStringContainsString('@property-read ?Carbon lastModifiedDateTime', $comment);
+        $this->assertStringContainsString('@property-read ?string $id', $comment);
+        $this->assertStringContainsString('@property-read ?Carbon $lastModifiedDateTime', $comment);
     }
     
     public function testBoundActionsAreCorrect(): void

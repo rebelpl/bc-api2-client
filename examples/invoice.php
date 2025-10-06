@@ -1,5 +1,4 @@
 <?php
-use Rebel\BCApi2\Entity\Repository;
 use Rebel\BCApi2\Entity\SalesInvoice;
 
 chdir(__DIR__ . '/../');
@@ -8,7 +7,7 @@ chdir(__DIR__ . '/../');
 $client = include(__DIR__ . '/connect/client-credentials.php');
 # $client = include(__DIR__ . '/connect/authorization-code.php');
 
-$repository = new SalesInvoice\Repository($client)->setExpandedByDefault([ 'pdfDocument' ]);
+$repository = (new SalesInvoice\Repository($client))->setExpandedByDefault([ 'pdfDocument' ]);
 echo $repository->getBaseUrl() . "\n";
 
 /** @var SalesInvoice\Record $salesInvoice */

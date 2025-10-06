@@ -246,12 +246,12 @@ class Generator
         if ($property->isCollection()) {
             $type = ucfirst(substr($property->getCollectionType(), strlen($this->metadata->getNamespace()) + 1));
 
-            return sprintf('@property Entity\Collection|%s\Record[] %s',
+            return sprintf('@property Entity\Collection|%s\Record[] $%s',
                 $type, $name);
         }
 
         $type = ucfirst(substr($property->getType(), strlen($this->metadata->getNamespace()) + 1));
-        return sprintf('@property-read ?%s\Record %s',
+        return sprintf('@property-read ?%s\Record $%s',
             $type, $name);
     }
 
@@ -261,8 +261,8 @@ class Generator
             $isUpdateable = false;
         }
 
-        return sprintf('@%s ?%s %s',
-            $isUpdateable ? 'property' : 'property-read',
+        return sprintf('%s ?%s $%s',
+            $isUpdateable ? '@property' : '@property-read',
             $this->getPropertyType($propertyType), $name);
     }
     
@@ -326,7 +326,6 @@ class Generator
     
     protected function getPropertyCast(string $propertyType)
     {
-        $prefix = $this->metadata->getNamespace();
         switch ($propertyType) {
             case 'Edm.DateTimeOffset': return 'datetime';
             case 'Edm.Date': return 'date';

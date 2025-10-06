@@ -2,7 +2,6 @@
 namespace Rebel\BCApi2\Entity;
 
 use Carbon\Carbon;
-use Rebel\BCApi2\Client;
 use Rebel\BCApi2\Entity;
 
 /**

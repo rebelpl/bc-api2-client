@@ -6,7 +6,7 @@ use Rebel\BCApi2\Subscription;
 
 class NotificationTest extends TestCase
 {
-    private array $notifications = [];
+    private $notifications = [];
     
     public function setUp(): void
     {

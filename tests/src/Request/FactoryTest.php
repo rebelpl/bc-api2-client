@@ -21,7 +21,7 @@ class FactoryTest extends TestCase
 
     public function testSimpleUpdate()
     {
-        $entity = new Entity()->loadData([
+        $entity = (new Entity())->loadData([
             'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
             'name' => 'Test Entity',
             Entity::ODATA_ETAG => 'test-etag',
@@ -40,7 +40,7 @@ class FactoryTest extends TestCase
 
     public function testExtendedUpdate()
     {
-        $entity = new Entity([ 'lines', 'customer' ])->loadData([
+        $entity = (new Entity(['lines', 'customer']))->loadData([
             'id' => 'f3c1c612-fc83-f011-a6f5-000d3a4b6d9d',
             'name' => 'Test Entity',
             Entity::ODATA_ETAG => 'test-etag',
