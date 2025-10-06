@@ -168,7 +168,7 @@ class RepositoryTest extends TestCase
         $this->mockResponse->append(new Response(200, [],
             file_get_contents('tests/files/empty.json')));
 
-        $repository = new Repository($this->client, 'customers')
+        $repository = (new Repository($this->client, 'customers'))
             ->setDefaultFilters([
                 Expression::greaterThan('creditLimit', 1000),
                 'discountGroup' => 'GOLD',
@@ -189,7 +189,7 @@ class RepositoryTest extends TestCase
         $this->mockResponse->append(new Response(200, [],
             file_get_contents('tests/files/empty.json')));
 
-        $repository = new Repository($this->client, 'customers')
+        $repository = (new Repository($this->client, 'customers'))
             ->setExpandedByDefault([
                 'salesInvoices',
                 'salesAmount' => [
