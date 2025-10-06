@@ -1,7 +1,6 @@
 <?php
 use Rebel\BCApi2\Entity\Repository;
 use Rebel\BCApi2\Entity\SalesOrder;
-use Rebel\BCApi2\Entity\SalesOrderLine;
 
 chdir(__DIR__ . '/../');
 

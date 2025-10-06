@@ -12,9 +12,9 @@ use Rebel\BCApi2\Request\Batch;
  */
 class Repository
 {
-    private readonly string $baseUrl;
-    private array $expandedByDefault = [];
-    private array $defaultFilters = [];
+    protected readonly string $baseUrl;
+    protected array $expandedByDefault = [];
+    protected array $defaultFilters = [];
 
     /**
      * @param class-string<T> $entityClass

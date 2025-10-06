@@ -1,5 +1,4 @@
 <?php
-use Rebel\BCApi2\Entity\Repository;
 use Rebel\BCApi2\Entity\SalesInvoice;
 
 chdir(__DIR__ . '/../');
