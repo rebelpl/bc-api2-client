@@ -14,6 +14,7 @@ class Repository
 {
     private readonly string $baseUrl;
     private array $expandedByDefault = [];
+    private array $defaultFilters = [];
 
     /**
      * @param class-string<T> $entityClass
@@ -48,13 +49,19 @@ class Repository
         $this->expandedByDefault = $expanded;
         return $this;
     }
+    
+    public function setDefaultFilters(array $filters): static
+    {
+        $this->defaultFilters = $filters;
+        return $this;
+    }
 
     /**
      * @return ?T
      */
-    public function findOneBy(array $criteria, array $expanded = []): ?Entity
+    public function findOneBy(array $filters, array $expanded = []): ?Entity
     {
-        $result = $this->findBy($criteria, size: 1, expanded: $expanded);
+        $result = $this->findBy($filters, size: 1, expanded: $expanded);
         return !empty($result) ? $result[0] : null;
     }
 
@@ -69,12 +76,13 @@ class Repository
     /**
      * @return T[]
      */
-    public function findBy(array $criteria, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
+    public function findBy(array $filters, $orderBy = null, ?int $size = null, ?int $skip = null, array $expanded = []): array
     {
+        $filters = array_merge($this->defaultFilters, $filters);
         $expanded = array_merge($this->expandedByDefault, $expanded);
         $request = new Request('GET',
             new Request\UriBuilder($this->baseUrl)
-                ->where($criteria)
+                ->where($filters)
                 ->orderBy($orderBy)
                 ->top($size)
                 ->skip($skip)
@@ -87,6 +95,10 @@ class Repository
 
         $entities = [];
         $data = json_decode($response->getBody(), true);
+        if (!isset($data['value'])) {
+            throw new Exception\InvalidResponseException($response);
+        }
+        
         foreach ($data['value'] as $result) {
             $entities[] = $this->hydrate($result, $expanded);
         }
@@ -115,28 +127,6 @@ class Repository
 
         $data = json_decode($response->getBody(), true);
         return $this->hydrate($data, $expanded);
-    }
-    
-    private function normalizeExpandedToArray(mixed $expanded): array
-    {
-        if (!is_iterable($expanded)) {
-            return [ (string)$expanded ];
-        }
-        
-        $result = [];
-        foreach ($expanded as $key => $value) {
-            if (is_int($key)) {
-                $result[] = $value;
-            }
-            elseif (is_string($key) && is_array($value)) {
-                $result[] = $key;
-            }
-            else {
-                throw new Exception(sprintf('Invalid expand key: %s.', $key));
-            }
-        }
-        
-        return $result;
     }
     
     public function reload(Entity $entity): void
@@ -195,6 +185,7 @@ class Repository
 
         $data = $entity->toUpdate();
         $request = Request\Factory::createEntity($this->baseUrl, $entity, $data);
+        # echo $request->getBody()->getContents(); exit();
 
         $response = $this->client->call($request);
         if ($response->getStatusCode() !== Client::HTTP_CREATED) {
@@ -244,6 +235,9 @@ class Repository
         }
     }
 
+    /**
+     * @param Entity[] $entities
+     */
     public function batchSave(array $entities): void
     {
         $batch = new Batch();
@@ -268,8 +262,9 @@ class Repository
 
         $data = json_decode($response->getBody(), true);
         foreach ($data['responses'] as $response) {
+            
             $entity = $entities[ $response['id'] ];
-            $entity->loadData($response['body']);
+            $entity->loadData($response['body'], $this->baseUrl);
         }
     }
 
