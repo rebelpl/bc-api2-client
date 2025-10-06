@@ -56,7 +56,7 @@ class Repository
         return $this;
     }
     
-    public function setDefaultFilters(array $filters): static
+    public function setDefaultFilters(array $filters): self
     {
         $this->defaultFilters = $filters;
         return $this;
