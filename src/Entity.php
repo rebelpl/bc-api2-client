@@ -157,9 +157,9 @@ class Entity
         $this->set($property, $value);
     }
 
-    public function __isset(string $property)
+    public function __isset(string $property): bool
     {
-        $this->isset($property);
+        return $this->isset($property);
     }
 
     public function isset(string $property): bool
