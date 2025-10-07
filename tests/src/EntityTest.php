@@ -229,4 +229,11 @@ class EntityTest extends TestCase
        $this->expectException(Exception\PropertyIsNotExpandedException::class);
        $salesOrder->get('salesInvoiceLines', 'collection');
    }
+
+    public function testIsset(): void
+    {
+        $salesOrder = $this->salesOrders[0];
+        $this->assertTrue($salesOrder->isset('number'));
+        $this->assertFalse($salesOrder->isset('fooBar'));
+    }
 }
