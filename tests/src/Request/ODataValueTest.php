@@ -16,6 +16,6 @@ class ODataValueTest extends TestCase
         $this->assertEquals('false', (string)new ODataValue(false));
         $this->assertEquals('true', (string)new ODataValue(true));
         $this->assertEquals('null', (string)new ODataValue(null));
+        $this->assertEquals("'testing $'' %'", (string)new ODataValue('testing $\' %'));
     }
-
 }
