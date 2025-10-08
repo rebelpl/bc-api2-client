@@ -300,15 +300,6 @@ class Entity
         return $response->getBody();
     }
     
-    public function uploadIntoStream(string $name, string $data, Client $client): void
-    {
-        $url = $this->getExpandedContext($name);
-        $response = $client->patch($url, $data, $this->getETag());
-        if ($response->getStatusCode() !== Client::HTTP_NO_CONTENT) {
-            throw new Exception\InvalidResponseException($response);
-        }
-    }
-
     private function filterToString(array $criteria): string
     {
         if (count($criteria) === 0) {
