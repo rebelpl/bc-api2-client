@@ -330,7 +330,8 @@ class Entity
         }
 
         $data = json_decode($response->getBody(), true);
-        $this->load($property, $data);
+        $this->load($property, !empty($data['value']) && is_array($data['value']) 
+            ? $data['value'] : $data);
         return $this;
     }
 }
