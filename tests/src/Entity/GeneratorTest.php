@@ -80,7 +80,7 @@ class GeneratorTest extends TestCase
     public function testEntityTypeCasesWithRegularKeys(): void
     {
         $enumType = $this->generator->generateEnumTypeFor('jobQueuePriority');
-        $cases = $enumType->getCases();
+        $cases = $enumType->getConstants();
         $this->assertArrayHasKey('High', $cases);
 
         foreach ($cases as $case) {
@@ -91,7 +91,7 @@ class GeneratorTest extends TestCase
     public function testEntityTypeCasesWithSpecialCharacters(): void
     {
         $enumType = $this->generator->generateEnumTypeFor('jobQueueReportOutputType');
-        $cases = $enumType->getCases();
+        $cases = $enumType->getConstants();
         $this->assertArrayHasKey('NoneProcessingonly', $cases);
         
         $case = $cases['NoneProcessingonly'];
@@ -102,7 +102,7 @@ class GeneratorTest extends TestCase
     public function testEntityTypeCasesWithNullValue(): void
     {
         $enumType = $this->generator->generateEnumTypeFor('defaultDimensionParentType');
-        $cases = $enumType->getCases();
+        $cases = $enumType->getConstants();
         $this->assertArrayHasKey('Null', $cases);
 
         $case = $cases['Null'];
@@ -112,7 +112,7 @@ class GeneratorTest extends TestCase
     public function testEntityTypeCasesWithNumericalKeys(): void
     {
         $enumType = $this->generator->generateEnumTypeFor('idysSourceDocumentType');
-        $cases = $enumType->getCases();
+        $cases = $enumType->getConstants();
         $this->assertArrayHasKey('Value0', $cases);
         
         foreach ($cases as $case) {
