@@ -477,7 +477,9 @@ class Generator
         $enum = new PhpGenerator\EnumType($className);
 
         foreach ($enumMembers as $value) {
-            $case = preg_replace('/_x002[a-zA-Z0-9]_/', '', $value) ?: 'Null';
+            $case = !is_numeric($value)
+                ? preg_replace('/_x002[a-zA-Z0-9]_/', '', $value) ?: 'Null'
+                : 'Value' . $value;
             $enum->addCase($case, $value);
         }
 
