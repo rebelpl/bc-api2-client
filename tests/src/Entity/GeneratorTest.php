@@ -76,4 +76,47 @@ class GeneratorTest extends TestCase
         $this->assertEquals('void', $method->getReturnType());
         $this->assertStringContainsString("callBoundAction('Microsoft.NAV.shipAndInvoice'", $method->getBody());
     }
+
+    public function testEntityTypeCasesWithRegularKeys(): void
+    {
+        $enumType = $this->generator->generateEnumTypeFor('jobQueuePriority');
+        $cases = $enumType->getCases();
+        $this->assertArrayHasKey('High', $cases);
+
+        foreach ($cases as $case) {
+            $this->assertEquals($case->getValue(), $case->getName());
+        }
+    }
+
+    public function testEntityTypeCasesWithSpecialCharacters(): void
+    {
+        $enumType = $this->generator->generateEnumTypeFor('jobQueueReportOutputType');
+        $cases = $enumType->getCases();
+        $this->assertArrayHasKey('NoneProcessingonly', $cases);
+        
+        $case = $cases['NoneProcessingonly'];
+        $this->assertEquals('NoneProcessingonly', $case->getName());
+        $this->assertEquals('None_x0020__x0028_Processing_x0020_only_x0029_', $case->getValue());
+    }
+
+    public function testEntityTypeCasesWithNullValue(): void
+    {
+        $enumType = $this->generator->generateEnumTypeFor('defaultDimensionParentType');
+        $cases = $enumType->getCases();
+        $this->assertArrayHasKey('Null', $cases);
+
+        $case = $cases['Null'];
+        $this->assertEquals('_x0020_', $case->getValue());
+    }
+
+    public function testEntityTypeCasesWithNumericalKeys(): void
+    {
+        $enumType = $this->generator->generateEnumTypeFor('idysSourceDocumentType');
+        $cases = $enumType->getCases();
+        $this->assertArrayHasKey('Value0', $cases);
+        
+        foreach ($cases as $case) {
+            $this->assertEquals('Value' . $case->getValue(), $case->getName());
+        }
+    }
 }
