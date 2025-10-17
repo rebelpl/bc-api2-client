@@ -225,8 +225,8 @@ class Repository
             $body = $response['body'];
             if (!empty($body['error'])) {
                 throw new Exception(
-                    $body['error']['message'],
-                    $body['error']['code']);
+                    $body['error']['code'] . ': ' .$body['error']['message'],
+                    $response['status']);
             }
 
             if ($response['id'] === '$read') {
