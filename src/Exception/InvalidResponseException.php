@@ -11,8 +11,8 @@ class InvalidResponseException extends Exception
         $data = json_decode($response->getBody(), true);
         parent::__construct(
             isset($data['error'])
-                ? $data['error']['code'] . ': ' . $data['error']['message']
-                : 'Unknown error.', 
+                ? sprintf('%s: %s', $data['error']['code'], $data['error']['message'])
+                : sprintf('%s: %s', $response->getStatusCode(), $response->getReasonPhrase()), 
             $response->getStatusCode());
     }
 }
