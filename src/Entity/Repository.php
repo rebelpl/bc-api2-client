@@ -104,7 +104,7 @@ class Repository
         if (!isset($data['value'])) {
             throw new Exception\InvalidResponseException($response);
         }
-        
+
         foreach ($data['value'] as $result) {
             $entities[] = $this->hydrate($result, $expanded);
         }
@@ -134,7 +134,7 @@ class Repository
         $data = json_decode($response->getBody(), true);
         return $this->hydrate($data, $expanded);
     }
-    
+
     public function reload(Entity $entity): void
     {
         $request = new Request('GET',
@@ -268,7 +268,6 @@ class Repository
 
         $data = json_decode($response->getBody(), true);
         foreach ($data['responses'] as $response) {
-            
             $entity = $entities[ $response['id'] ];
             $entity->loadData($response['body'], $this->baseUrl);
         }
@@ -287,13 +286,41 @@ class Repository
     public function callBoundAction(string $action, Entity $entity, $reloadAfterwards = true): void
     {
         $url = $entity->getExpandedContext($action);
-        $response = $this->client->post($url, '');
+        if (!$reloadAfterwards) {
+            $response = $this->client->post($url, '');
+            if ($response->getStatusCode() !== Client::HTTP_OK) {
+                throw new Exception\InvalidResponseException($response);
+            }
+
+            return;
+        }
+
+        $batch = new Batch([
+            '$action' => new Request('POST', $url),
+            '$read'   => new Request('GET',
+                new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
+                    ->expand($entity->getExpandedProperties())),
+        ]);
+
+        // VALIDATE BATCH CONTENTS!
+        $response = $this->client->call($batch->getRequest());
         if ($response->getStatusCode() !== Client::HTTP_OK) {
             throw new Exception\InvalidResponseException($response);
         }
-        
-        if ($reloadAfterwards) {
-            $this->reload($entity);
+
+        // duplicate with update()
+        $data = json_decode($response->getBody(), true);
+        foreach ($data['responses'] as $response) {
+            $body = $response['body'];
+            if (!empty($body['error'])) {
+                throw new Exception(
+                    $body['error']['code'] . ': ' .$body['error']['message'],
+                    $response['status']);
+            }
+
+            if ($response['id'] === '$read') {
+                $entity->loadData($body, $this->baseUrl);
+            }
         }
     }
 }
