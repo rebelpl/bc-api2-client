@@ -280,41 +280,13 @@ class Repository
     public function callBoundAction(string $action, Entity $entity, $reloadAfterwards = true): void
     {
         $url = $entity->getExpandedContext($action);
-        if (!$reloadAfterwards) {
-            $response = $this->client->post($url, '');
-            if ($response->getStatusCode() !== Client::HTTP_OK) {
-                throw new Exception\InvalidResponseException($response);
-            }
-
-            return;
-        }
-
-        $batch = new Batch([
-            '$action' => new Request('POST', $url),
-            '$read'   => new Request('GET',
-                new Request\UriBuilder($this->baseUrl, $entity->getPrimaryKey())
-                    ->expand($entity->getExpandedProperties())),
-        ]);
-
-        // VALIDATE BATCH CONTENTS!
-        $response = $this->client->call($batch->getRequest());
+        $response = $this->client->post($url, '');
         if ($response->getStatusCode() !== Client::HTTP_OK) {
             throw new Exception\InvalidResponseException($response);
         }
 
-        // duplicate with update()
-        $data = json_decode($response->getBody(), true);
-        foreach ($data['responses'] as $response) {
-            $body = $response['body'];
-            if (!empty($body['error'])) {
-                throw new Exception(
-                    $body['error']['code'] . ': ' .$body['error']['message'],
-                    $response['status']);
-            }
-
-            if ($response['id'] === '$read') {
-                $entity->loadData($body, $this->baseUrl);
-            }
+        if ($reloadAfterwards) {
+            $this->reload($entity);
         }
     }
 }
