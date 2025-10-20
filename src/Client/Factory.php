@@ -39,8 +39,9 @@ class Factory
                 ]);
 
                 file_put_contents($tokenFilename, json_encode($token->jsonSerialize(), JSON_PRETTY_PRINT));
-                return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId, options: $options);
             }
+            
+            return new Client($token->getToken(), environment: $environment, apiRoute: $apiRoute, companyId: $companyId, options: $options);
         }
 
         // get the authorization code using CLI or HTTP flow
