@@ -15,7 +15,7 @@ class MetadataTest extends TestCase
     }
     public function testEnumTypes()
     {
-        $this->assertCount(34, $this->metadata->getEnumTypes());
+        $this->assertCount(35, $this->metadata->getEnumTypes());
         $this->assertContains('Inventory', $this->metadata->getEnumTypeMembers('itemType'));
         $this->assertEquals([
             1 => 'Customer',
