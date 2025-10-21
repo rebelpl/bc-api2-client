@@ -236,4 +236,17 @@ class EntityTest extends TestCase
         $this->assertTrue($salesOrder->isset('number'));
         $this->assertFalse($salesOrder->isset('fooBar'));
     }
+    
+    public function testLoadDataPartially(): void
+    {
+        $data = json_decode(file_get_contents('tests/files/shipToAddresses.json'), true);
+        $this->assertNotEmpty($data['value']);
+        $this->assertIsArray($data['value']);
+        
+        $this->customer->loadData([
+            'shipToAddresses' => $data['value']
+        ]);
+        
+        $this->assertInstanceOf(Entity\Collection::class, $this->customer->get('shipToAddresses'));
+    }
 }
