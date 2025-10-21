@@ -313,6 +313,11 @@ class Entity
     {
         $url = $this->getExpandedContext($property . $this->filterToString($criteria));
         $response = $client->get($url);
+
+        if ($response->getStatusCode() === Client::HTTP_NOT_FOUND) {
+            $this->load($property, null);
+            return $this;
+        }
         
         if ($response->getStatusCode() !== Client::HTTP_OK) {
             throw new Exception\InvalidResponseException($response);
