@@ -1,0 +1,26 @@
+{
+  "@odata.context": "https://api.businesscentral.dynamics.com/v2.0/Production/api/v2.0/$metadata#companies(a7f1d29f-b084-f011-a708-6045bd956d8a)/customers(25abf0d5-f683-f011-a6f5-000d3a4b6d9d)/shipToAddresses",
+  "value": [
+    {
+      "@odata.etag": "W/\"JzIwOzE3NDAwMjc1MDQwNDk5OTU4NTc5MTswMDsn\"",
+      "id": "9176c9af-1884-f011-a6f5-000d3a4b6d9d",
+      "customerNo": "CU-2037447",
+      "code": "91330",
+      "gln": "",
+      "address": "Test Street",
+      "address2": "",
+      "city": "Gdańsk",
+      "countryRegionCode": "PL",
+      "name": "Mariola Testowa",
+      "name2": "",
+      "postCode": "80-123",
+      "contact": "",
+      "email": "",
+      "phoneNo": "",
+      "locationCode": "",
+      "lastModifiedDateTime": "0001-01-01T00:00:00Z",
+      "shippingAgentCode": "",
+      "shippingAgentServiceCode": ""
+    }
+  ]
+}

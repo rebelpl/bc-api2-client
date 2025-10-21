@@ -230,11 +230,24 @@ class EntityTest extends TestCase
        $this->expectException(Exception\PropertyIsNotExpandedException::class);
        $salesOrder->get('salesInvoiceLines', 'collection');
    }
-   
-   public function testIsset(): void
-   {
-       $salesOrder = $this->salesOrders[0];
-       $this->assertTrue($salesOrder->isset('number'));
-       $this->assertFalse($salesOrder->isset('fooBar'));
-   }
+
+    public function testIsset(): void
+    {
+        $salesOrder = $this->salesOrders[0];
+        $this->assertTrue($salesOrder->isset('number'));
+        $this->assertFalse($salesOrder->isset('fooBar'));
+    }
+    
+    public function testLoadDataPartially(): void
+    {
+        $data = json_decode(file_get_contents('tests/files/shipToAddresses.json'), true);
+        $this->assertNotEmpty($data['value']);
+        $this->assertIsArray($data['value']);
+        
+        $this->customer->loadData([
+            'shipToAddresses' => $data['value']
+        ]);
+        
+        $this->assertInstanceOf(Entity\Collection::class, $this->customer->get('shipToAddresses'));
+    }
 }
