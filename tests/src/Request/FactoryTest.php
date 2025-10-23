@@ -107,7 +107,7 @@ class FactoryTest extends TestCase
 
         $request = $requests['$update'];
         $this->assertEquals('PATCH', $request['method']);
-        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)', $request['url']);
+        $this->assertEquals('test(f3c1c612-fc83-f011-a6f5-000d3a4b6d9d)', urldecode($request['url']));
         $this->assertEquals('Another Name', $request['body']['name']);
 
         $request = $requests['$read'];
