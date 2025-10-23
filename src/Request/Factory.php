@@ -46,22 +46,19 @@ class Factory
             }
         }
 
-
+        $update = new Request('PATCH',
+            (new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()))
+                ->expand($entity->getExpandedProperties()),
+            json_encode($data, JSON_FORCE_OBJECT),
+            $entity->hasExpandedProperties() ? '*' : $entity->getETag());
         if (empty($requests)) {
-            return new Request('PATCH',
-                (new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()))
-                    ->expand($entity->getExpandedProperties()),
-                json_encode($data, JSON_FORCE_OBJECT),
-                $entity->getETag());
+            return $update;
         }
 
         $batch = new Request\Batch();
         if (!empty($data)) {
             // update the entity
-            $batch->add('$update', new Request('PATCH',
-                new Request\UriBuilder($baseUrl, $entity->getPrimaryKey()),
-                json_encode($data, JSON_FORCE_OBJECT),
-                $entity->getETag()));
+            $batch->add('$update', $update);
         }
 
         // update expanded properties
