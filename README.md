@@ -1,5 +1,6 @@
 # Business Central API2 for PHP
-This library includes client and base models to use [Business Central API (v2.0)](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/api-reference/v2.0/) in PHP.
+This library includes client to use [Business Central API (v2.0)](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/api-reference/v2.0/) in PHP.
+Base models for the standard Microsoft API v2 are available here: [rebelpl/bc-api2-common](https://github.com/rebelpl/bc-api2-common). 
 
 ## Installation
 To install, use composer:
